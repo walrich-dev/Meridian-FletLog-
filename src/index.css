@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+/*
+ * Identidade visual do Meridian.
+ * A paleta "marca" (azul) gera as classes bg-marca-600, text-marca-700 etc.
+ * Para mudar a cor do sistema inteiro, basta trocar estes valores.
+ * Verde, amarelo e vermelho ficam reservados para status (em dia, atenção, vencido).
+ */
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-marca-50: #eff6ff;
+  --color-marca-100: #dbeafe;
+  --color-marca-200: #bfdbfe;
+  --color-marca-300: #93c5fd;
+  --color-marca-400: #60a5fa;
+  --color-marca-500: #3b82f6;
+  --color-marca-600: #2563eb;
+  --color-marca-700: #1d4ed8;
+  --color-marca-800: #1e40af;
+  --color-marca-900: #1e3a8a;
+  --color-marca-950: #172554;
+
+  /* Fundo das páginas: cinza levemente azulado */
+  --color-fundo: #f4f7fc;
+}
+
+@layer base {
+  body {
+    @apply bg-fundo text-slate-900 antialiased;
+  }
+
+  /* Números alinhados nas tabelas e nos indicadores */
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+}
