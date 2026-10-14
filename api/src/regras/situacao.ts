@@ -1,7 +1,7 @@
 // Regras do RF03 (alertas de manutenção preventiva), escritas como funções puras
 // para serem testadas isoladamente (situacao.test.ts).
-import type { Situacao, SituacaoCnh } from '../../lib/tipos';
-import { adicionarDias, diasEntre } from './datas';
+import type { Situacao, SituacaoCnh } from '../tipos.js';
+import { adicionarDias, diasEntre } from './datas.js';
 
 export type Antecedencia = { km: number; dias: number };
 

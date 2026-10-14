@@ -11,7 +11,8 @@ import { Carregando, MensagemErro } from '../components/ui/Estados';
 import { useNotificar } from '../components/ui/useNotificar';
 import { useConsulta } from '../hooks/useConsulta';
 import { useFormulario } from '../hooks/useFormulario';
-import { api, modoSimulado } from '../lib/api';
+import { api } from '../lib/api';
+import { mostrarAcessosDeTeste } from '../lib/acessos-demonstracao';
 import { formatarData } from '../lib/formatacao';
 import { mascaraInteiro } from '../lib/mascaras';
 import type { Configuracao } from '../lib/tipos';
@@ -33,7 +34,7 @@ export function ConfiguracoesPage() {
           <AntecedenciaAlertas key={configuracao.atualizadoEm} configuracao={configuracao} aoSalvar={recarregar} />
         )}
         <TrocarSenha />
-        {modoSimulado && ehAdmin && <DadosDemonstracao aoRestaurar={recarregar} />}
+        {mostrarAcessosDeTeste && ehAdmin && <DadosDemonstracao aoRestaurar={recarregar} />}
       </div>
     </>
   );
@@ -176,7 +177,7 @@ function TrocarSenha() {
   );
 }
 
-/** Só no modo demonstração: desfaz as alterações e recria os dados de exemplo. */
+/** Desfaz as alterações e recria os dados de exemplo. Aparece só em desenvolvimento. */
 function DadosDemonstracao({ aoRestaurar }: { aoRestaurar: () => void }) {
   const [confirmando, setConfirmando] = useState(false);
   const { recarregarAlertas } = useAlertas();
@@ -186,7 +187,7 @@ function DadosDemonstracao({ aoRestaurar }: { aoRestaurar: () => void }) {
     <Cartao
       icone={DatabaseBackup}
       titulo="Dados de demonstração"
-      descricao="Nesta versão, os dados ficam salvos neste navegador (API simulada)."
+      descricao="Recria a frota de exemplo no banco de dados."
     >
       <p className="text-sm text-slate-600">
         Restaurar apaga tudo o que foi cadastrado ou alterado e recria a frota de exemplo, com as datas ajustadas para

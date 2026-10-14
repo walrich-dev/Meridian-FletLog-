@@ -2,9 +2,9 @@
 // Os documentos são normalizados antes da validação (ex.: "abc-1d23" -> "ABC1D23"),
 // então o usuário pode digitar com ou sem pontuação.
 import { z } from 'zod';
-import { ErroApi } from '../erros';
-import { dataDeTexto, hoje } from './datas';
-import { cpfValido, somenteDigitos } from './documentos';
+import { ErroApi } from '../erros.js';
+import { dataDeTexto, hoje } from './datas.js';
+import { cpfValido, somenteDigitos } from './documentos.js';
 
 // Mensagens padrão do Zod em português (as principais são personalizadas abaixo)
 z.config(z.locales.ptBR());

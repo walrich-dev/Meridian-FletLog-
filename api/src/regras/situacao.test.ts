@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dataDeTexto } from './datas';
-import { calcularSituacao, calcularSituacaoCnh, piorSituacao, proximaProgramacao } from './situacao';
+import { dataDeTexto } from './datas.js';
+import { calcularSituacao, calcularSituacaoCnh, piorSituacao, proximaProgramacao } from './situacao.js';
 
 const HOJE = dataDeTexto('2026-10-17');
 const ANTECEDENCIA = { km: 500, dias: 15 };

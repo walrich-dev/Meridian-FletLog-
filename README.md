@@ -1,9 +1,9 @@
 # Meridian
 
-Painel web de controle de frota para pequenas empresas de logística e transporte.
+Sistema web de controle de frota para pequenas empresas de logística e transporte.
 Trabalho de Curso (TC) do Bacharelado em Sistemas de Informação, IESGO, 2026/2.
 
-> **Versão 0.2 (inicial):** front-end completo, funcionando com uma **API simulada no navegador**. Os dados de demonstração ficam salvos no próprio navegador (`localStorage`), então o sistema roda sem servidor nem banco de dados.
+> **Versão 1.0:** painel web, API REST e banco de dados PostgreSQL.
 
 ## Funcionalidades
 
@@ -14,9 +14,27 @@ Trabalho de Curso (TC) do Bacharelado em Sistemas de Informação, IESGO, 2026/2
 | RF02 | Dashboard com indicadores de quilometragem, custos e manutenções | Indicadores da frota, custo mensal dos últimos 12 meses, preventiva × corretiva, custo e quilometragem por veículo |
 | RF03 | Alertas de manutenção preventiva por km ou data | Situação calculada (em dia, próxima do limite, vencida), antecedência configurável, preventivas recorrentes programadas automaticamente ao concluir, alertas de CNH vencida ou vencendo |
 
+## Como está organizado
+
+```
+TCC-projeto/
+├── src/      painel web (front-end)
+├── api/      API REST e banco de dados (back-end)
+└── docs/     documentação e modelagem do banco
+```
+
+O painel não acessa o banco diretamente: ele conversa com a API por HTTP, no padrão REST.
+A API é a única que fala com o PostgreSQL.
+
+```
+Navegador  →  Painel (React)  →  API REST (Express)  →  PostgreSQL
+```
+
 ## Tecnologias
 
-React 19, TypeScript, Vite, React Router, Tailwind CSS, lucide-react (ícones), Zod (validação), Vitest (testes) e oxlint (análise estática).
+**Painel:** React 19, TypeScript, Vite, React Router, Tailwind CSS, lucide-react (ícones) e Zod (validação).
+
+**API:** Node.js, TypeScript, Express, PostgreSQL com node-postgres (SQL escrito à mão), Zod (validação), bcrypt (senhas) e Vitest (testes).
 
 ### Identidade visual
 
@@ -27,14 +45,33 @@ React 19, TypeScript, Vite, React Router, Tailwind CSS, lucide-react (ícones), 
 
 ## Como executar
 
-Pré-requisito: [Node.js](https://nodejs.org) 22.12 ou superior (desenvolvido com o 24).
+Pré-requisitos: [Node.js](https://nodejs.org) 22.12 ou superior e [PostgreSQL](https://www.postgresql.org/download/) 16 ou superior.
+
+**1. Criar o banco de dados**
+
+```bash
+psql -U postgres -c "CREATE DATABASE meridian"
+```
+
+**2. Subir a API** (em um terminal)
+
+```bash
+cd api
+npm install
+cp .env.example .env     # preencha a senha do PostgreSQL em PGPASSWORD
+npm run banco:recriar    # cria as tabelas e grava os dados de demonstração
+npm run dev              # a API fica em http://localhost:3333/api
+```
+
+**3. Subir o painel** (em outro terminal, na pasta do projeto)
 
 ```bash
 npm install
+cp .env.example .env     # já vem apontando para a API local
 npm run dev
 ```
 
-Abra <http://localhost:5173>. Na tela de login há atalhos para os acessos de demonstração:
+Abra <http://localhost:5173>. Durante o desenvolvimento, a tela de login mostra atalhos para os acessos de teste:
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
@@ -45,75 +82,27 @@ Os usuários de demonstração são pessoas fictícias (Mariana Costa, administr
 
 ### Dados de demonstração
 
-Na primeira vez que o painel é aberto, são criados 6 veículos (um deles inativo), 5 motoristas e 24 manutenções, com um ano de histórico de custos. As datas são relativas ao dia da criação, para que sempre existam situações de alerta: preventiva vencida por data e por km, preventivas próximas do limite, CNH vencida e CNH vencendo.
+O comando `npm run banco:popular` cria 6 veículos (um deles inativo), 5 motoristas e 24 manutenções, com um ano de histórico de custos. As datas são relativas ao dia da criação, para que sempre existam situações de alerta: preventiva vencida por data e por km, preventivas próximas do limite, CNH vencida e CNH vencendo.
 
-Para recomeçar (por exemplo, no dia da apresentação), entre como administrador e use **Configurações → Restaurar dados de demonstração**.
+Para recomeçar (por exemplo, no dia da apresentação), entre como administrador e use **Configurações → Restaurar dados de demonstração**, ou rode `npm run banco:popular` na pasta `api`.
 
 ## Scripts
+
+**Painel** (pasta do projeto)
 
 | Comando | O que faz |
 | --- | --- |
 | `npm run dev` | Sobe o painel em modo desenvolvimento |
-| `npm test` | Roda os testes automatizados (regras de negócio e API simulada) |
 | `npm run typecheck` | Verifica os tipos TypeScript |
 | `npm run lint` | Analisa o código com o oxlint |
 | `npm run build` | Gera a versão de produção na pasta `dist/` |
 | `npm run preview` | Serve a versão de produção localmente |
 
-## Estrutura
+**API** (pasta `api`): veja [api/README.md](api/README.md).
 
-```
-src/
-├── auth/              login, sessão e rotas protegidas (RNF01)
-├── components/        layout, gráficos, badges, filtros e componentes de interface (ui/)
-├── hooks/             consulta à API e estado de formulários
-├── lib/
-│   ├── api.ts         cliente da API: simulada ou real, conforme VITE_API_URL
-│   ├── tipos.ts       formato dos dados trocados com a API
-│   ├── formatacao.ts  datas, moeda, km, placa, CPF e rótulos
-│   └── mascaras.ts    máscaras dos campos (CPF, telefone, placa...)
-├── pages/             telas do sistema
-├── simulador/         API simulada no navegador
-│   ├── modulos/       uma parte por assunto: veículos, motoristas, manutenções, alertas, dashboard...
-│   ├── regras/        regras puras: situação das manutenções, validações, datas, documentos
-│   ├── banco.ts       "tabelas" guardadas no localStorage
-│   ├── dados-iniciais.ts  frota de demonstração
-│   └── index.ts       roteador: atende cada rota como a API real atenderia
-├── router.tsx         rotas do painel
-└── main.tsx
-```
+## Testes
 
-## API simulada
-
-O painel conversa com uma API REST por meio de `src/lib/api.ts`. Nesta versão, essa API é simulada em `src/simulador/`: ela atende as mesmas rotas, com as mesmas validações, regras de negócio, mensagens de erro e códigos HTTP que uma API real teria. Cada alteração é feita numa cópia dos dados e só é gravada se der certo, como uma transação de banco de dados. As senhas são guardadas com sal e hash SHA-256, nunca em texto puro.
-
-**Limitação:** como os dados ficam no navegador, cada navegador tem a sua própria cópia, e o login protege a interface, mas não os dados. Para uso real, é necessária uma API com banco de dados no servidor.
-
-### Ligando a uma API real
-
-Crie um arquivo `.env` (a partir do `.env.example`) com o endereço da API:
-
-```
-VITE_API_URL=https://endereco-da-api/api
-```
-
-Com isso, o painel passa a fazer requisições HTTP para esse endereço, e o simulador nem é carregado. A API precisa atender as rotas abaixo, enviando e recebendo JSON no formato de `src/lib/tipos.ts`. Exceto `GET /health` e `POST /auth/login`, todas recebem o cabeçalho `Authorization: Bearer <token>`. Erros devem seguir o formato `{ "mensagem": "...", "detalhes": { "campo": ["mensagem"] } }`, usado para destacar o campo no formulário.
-
-| Método e rota | Descrição |
-| --- | --- |
-| `GET /health` | Situação da API e do banco |
-| `POST /auth/login` | `{ email, senha }` → `{ token, usuario }` |
-| `POST /auth/logout` · `GET /auth/me` · `PUT /auth/senha` | Sair, usuário logado e troca de senha |
-| `GET` `POST /usuarios` · `PUT /usuarios/:id` | Gestão de usuários (somente ADMIN) |
-| `GET` `POST /veiculos` · `GET` `PUT` `DELETE /veiculos/:id` | Veículos (o DELETE é exclusão lógica) |
-| `PATCH /veiculos/:id/km` · `POST /veiculos/:id/reativar` | Atualizar hodômetro e reativar |
-| `GET` `POST /motoristas` · `GET` `PUT` `DELETE /motoristas/:id` · `POST /motoristas/:id/reativar` | Motoristas |
-| `GET` `POST /manutencoes` · `GET` `PUT` `DELETE /manutencoes/:id` | Manutenções |
-| `POST /manutencoes/:id/concluir` · `POST /manutencoes/:id/cancelar` | Concluir (programa a próxima preventiva) e cancelar |
-| `GET /alertas` · `GET /dashboard` | Alertas (RF03) e indicadores (RF02) |
-| `GET` `PUT /configuracoes` | Antecedência dos alertas (alteração somente ADMIN) |
-
-As listagens aceitam filtros na query string (ex.: `/veiculos?busca=&status=`, `/manutencoes?veiculoId=&status=&tipo=&situacao=&busca=`). O comportamento esperado de cada rota está implementado em `src/simulador/modulos/` e coberto pelos testes em `src/simulador/simulador.test.ts`.
+A API tem **63 testes automatizados** (`cd api && npm test`), executados contra um banco PostgreSQL de verdade. Eles cobrem a autenticação e os perfis, os cadastros e as validações de documentos, as regras das manutenções e dos alertas, os indicadores do dashboard e o comportamento das transações.
 
 ## Regras de negócio
 
@@ -123,11 +112,15 @@ As listagens aceitam filtros na query string (ex.: `/veiculos?busca=&status=`, `
 - **Exclusão lógica:** veículos e motoristas inativados saem das listagens e dos alertas, mas o histórico de custos é mantido. Manutenções realizadas não podem ser excluídas, só corrigidas.
 - **"Hoje"** é calculado no fuso de Brasília, independentemente do computador.
 
+## Documentação
+
+- [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md) — documentação completa do projeto
+- [docs/Meridian-Documentacao.docx](docs/Meridian-Documentacao.docx) — a mesma documentação em Word, no formato ABNT
+- [docs/modelagem-banco-de-dados.png](docs/modelagem-banco-de-dados.png) — modelo do banco de dados
+
 ## Próximas etapas
 
 Até a versão final (10/11/2026):
 
-- Implantação do painel (ex.: Vercel)
-- Integração com uma API real, se fizer parte do escopo final
+- Implantação do painel e da API (ex.: Vercel e Render)
 - Definir com o orientador o módulo de viagens
-- Visualização em cartões no celular para as listagens

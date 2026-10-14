@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { adicionarDias, dataDeTexto, diasEntre, hoje, inicioDoMes, textoDeData } from './datas';
-import { calcularDigitosCpf, cpfValido, formatarPlaca, normalizarBusca, somenteDigitos } from './documentos';
-import { gerarHashSenha, senhaConfere, sha256 } from './sha256';
-import { chassi, cnh, data, dataAteHoje, dinheiro, inteiro, opcional, placa, renavam, telefone } from './validacao';
+import { adicionarDias, dataDeTexto, diasEntre, hoje, inicioDoMes, textoDeData } from './datas.js';
+import { calcularDigitosCpf, cpfValido, formatarPlaca, normalizarBusca, somenteDigitos } from './documentos.js';
+import { conferirSenha, gerarHashSenha, gerarToken } from './senha.js';
+import { chassi, cnh, data, dataAteHoje, dinheiro, inteiro, opcional, placa, renavam, telefone } from './validacao.js';
 
 /** Mensagem do primeiro erro de validação. */
 function erro(schema: z.ZodType, valor: unknown) {
   const resultado = schema.safeParse(valor);
-  return resultado.success ? null : resultado.error.issues[0].message;
+  return resultado.success ? null : (resultado.error.issues[0]?.message ?? null);
 }
 
 describe('datas', () => {
@@ -106,19 +106,20 @@ describe('busca', () => {
 });
 
 describe('senhas', () => {
-  it('calcula o SHA-256 corretamente (vetores oficiais do NIST)', () => {
-    expect(sha256('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
-    expect(sha256('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
-    expect(sha256('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq')).toBe(
-      '248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1',
-    );
+  it('guarda a senha com sal e confere sem precisar do texto original', async () => {
+    const hash = await gerarHashSenha('Frota@2026');
+
+    expect(hash).not.toContain('Frota@2026');
+    // O bcrypt usa um sal diferente a cada vez, então o mesmo texto gera hashes distintos
+    expect(await gerarHashSenha('Frota@2026')).not.toBe(hash);
+
+    expect(await conferirSenha('Frota@2026', hash)).toBe(true);
+    expect(await conferirSenha('frota@2026', hash)).toBe(false);
   });
 
-  it('guarda a senha com sal e confere sem precisar do texto original', () => {
-    const hash = gerarHashSenha('Frota@2026');
-    expect(hash).not.toContain('Frota@2026');
-    expect(gerarHashSenha('Frota@2026')).not.toBe(hash); // sal diferente a cada vez
-    expect(senhaConfere('Frota@2026', hash)).toBe(true);
-    expect(senhaConfere('frota@2026', hash)).toBe(false);
+  it('gera tokens de sessão aleatórios de 64 caracteres', () => {
+    const token = gerarToken();
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+    expect(gerarToken()).not.toBe(token);
   });
 });

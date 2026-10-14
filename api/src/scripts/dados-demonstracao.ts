@@ -1,59 +1,98 @@
-// Dados FICTÍCIOS de demonstração, criados na primeira vez que o painel é aberto
-// (e ao restaurar a demonstração em Configurações).
+// Dados FICTÍCIOS de demonstração, usados para popular o banco.
 //
 // As datas são relativas ao dia em que os dados são criados, para que sempre existam
 // situações de alerta: preventiva vencida por data e por km, preventivas próximas do
 // limite, CNH vencida e CNH vencendo. Também há um ano de histórico de custos.
-import {
-  bancoVazio,
-  novoId,
-  type Banco,
-  type ManutencaoRegistro,
-  type MotoristaRegistro,
-  type VeiculoRegistro,
-} from './banco';
-import { adicionarDias, hoje } from './regras/datas';
-import { calcularDigitosCpf } from './regras/documentos';
-import { ACESSOS_DEMONSTRACAO } from './acessos-demonstracao';
-import { gerarHashSenha } from './regras/sha256';
+import { adicionarDias, hoje } from '../regras/datas.js';
+import { calcularDigitosCpf } from '../regras/documentos.js';
+import type { CategoriaCnh, StatusManutencao, StatusVeiculo, TipoManutencao } from '../tipos.js';
 
-type NovaManutencao = Pick<ManutencaoRegistro, 'tipo' | 'descricao'> & Partial<ManutencaoRegistro>;
-type NovoMotorista = Pick<MotoristaRegistro, 'nome' | 'cnh' | 'categoriaCnh' | 'telefone'> & {
+/** Acessos de demonstração (pessoas fictícias). */
+export const ACESSOS_DEMONSTRACAO = [
+  { nome: 'Mariana Costa', email: 'admin@meridian.local', senha: 'Frota@2026', perfil: 'ADMIN' },
+  { nome: 'Rafael Alves', email: 'gestor@meridian.local', senha: 'Gestor@2026', perfil: 'GESTOR' },
+] as const;
+
+export type MotoristaDemo = {
+  id: number;
+  nome: string;
+  cpf: string;
+  cnh: string;
+  categoriaCnh: CategoriaCnh;
+  validadeCnh: string;
+  telefone: string | null;
+};
+
+export type VeiculoDemo = {
+  id: number;
+  placa: string;
+  marca: string;
+  modelo: string;
+  chassi: string;
+  renavam: string;
+  anoAquisicao: number;
+  kmAtual: number;
+  status: StatusVeiculo;
+  motoristaId: number | null;
+};
+
+export type ManutencaoDemo = {
+  veiculoId: number;
+  tipo: TipoManutencao;
+  descricao: string;
+  status: StatusManutencao;
+  dataProgramada: string | null;
+  kmLimite: number | null;
+  intervaloKm: number | null;
+  intervaloDias: number | null;
+  dataRealizacao: string | null;
+  kmRealizacao: number | null;
+  custo: number | null;
+  oficina: string | null;
+};
+
+type NovaManutencao = Pick<ManutencaoDemo, 'tipo' | 'descricao'> & Partial<ManutencaoDemo>;
+type NovoMotorista = Pick<MotoristaDemo, 'nome' | 'cnh' | 'categoriaCnh' | 'telefone'> & {
   baseCpf: string;
   validadeEmDias: number;
 };
-type NovoVeiculo = Pick<VeiculoRegistro, 'placa' | 'marca' | 'modelo' | 'chassi' | 'renavam' | 'anoAquisicao' | 'kmAtual'> &
-  Partial<Pick<VeiculoRegistro, 'status'>>;
+type NovoVeiculo = Pick<
+  VeiculoDemo,
+  'placa' | 'marca' | 'modelo' | 'chassi' | 'renavam' | 'anoAquisicao' | 'kmAtual'
+> &
+  Partial<Pick<VeiculoDemo, 'status'>>;
 
-export function criarDadosIniciais(dataHoje = hoje()): Banco {
-  const banco = bancoVazio();
-  const agora = new Date().toISOString();
+export type DadosDemonstracao = {
+  motoristas: MotoristaDemo[];
+  veiculos: VeiculoDemo[];
+  manutencoes: ManutencaoDemo[];
+};
 
-  /** Data relativa a hoje, no formato guardado. Ex.: dia(-30) = 30 dias atrás. */
-  const dia = (deslocamento: number) => adicionarDias(dataHoje, deslocamento).toISOString();
+export function criarDadosDemonstracao(dataHoje = hoje()): DadosDemonstracao {
+  const motoristas: MotoristaDemo[] = [];
+  const veiculos: VeiculoDemo[] = [];
+  const manutencoes: ManutencaoDemo[] = [];
 
+  /** Data relativa a hoje, no formato de uma coluna DATE. Ex.: dia(-30) = 30 dias atrás. */
+  const dia = (deslocamento: number) => adicionarDias(dataHoje, deslocamento).toISOString().slice(0, 10);
 
   function motorista({ baseCpf, validadeEmDias, ...dados }: NovoMotorista): number {
-    const id = novoId(banco, 'motoristas');
-    banco.motoristas.push({
+    const id = motoristas.length + 1;
+    motoristas.push({
       id,
       ...dados,
       cpf: baseCpf + calcularDigitosCpf(baseCpf), // CPF fictício, mas com dígitos válidos
       validadeCnh: dia(validadeEmDias),
-      ativo: true,
-      criadoEm: agora,
-      atualizadoEm: agora,
     });
     return id;
   }
 
-  function veiculo(dados: NovoVeiculo, motoristaId: number | null, manutencoes: NovaManutencao[]) {
-    const veiculoId = novoId(banco, 'veiculos');
-    banco.veiculos.push({ id: veiculoId, status: 'ATIVO', ...dados, motoristaId, criadoEm: agora, atualizadoEm: agora });
+  function veiculo(dados: NovoVeiculo, motoristaId: number | null, lista: NovaManutencao[]) {
+    const veiculoId = veiculos.length + 1;
+    veiculos.push({ status: 'ATIVO', ...dados, id: veiculoId, motoristaId });
 
-    for (const manutencao of manutencoes) {
-      banco.manutencoes.push({
-        id: novoId(banco, 'manutencoes'),
+    for (const manutencao of lista) {
+      manutencoes.push({
         veiculoId,
         status: 'PENDENTE',
         dataProgramada: null,
@@ -64,25 +103,9 @@ export function criarDadosIniciais(dataHoje = hoje()): Banco {
         kmRealizacao: null,
         custo: null,
         oficina: null,
-        criadoEm: agora,
-        atualizadoEm: agora,
         ...manutencao,
       });
     }
-  }
-
-  // Usuários de acesso
-  for (const { nome, email, senha, perfil } of ACESSOS_DEMONSTRACAO) {
-    banco.usuarios.push({
-      id: novoId(banco, 'usuarios'),
-      nome,
-      email,
-      senhaHash: gerarHashSenha(senha),
-      perfil,
-      ativo: true,
-      criadoEm: agora,
-      atualizadoEm: agora,
-    });
   }
 
   // Motoristas
@@ -434,6 +457,5 @@ export function criarDadosIniciais(dataHoje = hoje()): Banco {
       },
     ],
   );
-
-  return banco;
+  return { motoristas, veiculos, manutencoes };
 }

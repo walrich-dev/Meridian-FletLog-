@@ -1,12 +1,14 @@
 // Cliente da API: todas as chamadas do painel passam por aqui.
 //
-// - Sem VITE_API_URL: usa a API simulada no navegador (src/simulador), com dados
-//   de demonstração guardados no localStorage. É o modo da versão atual.
-// - Com VITE_API_URL: faz requisições HTTP para a API real, nas mesmas rotas.
+// O endereço da API vem de VITE_API_URL (arquivo .env). Sem ele, o painel não
+// tem com quem conversar, então o erro é mostrado logo, e não a cada tela.
 const URL_API = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? '';
 
-/** true quando os dados vêm da API simulada no navegador. */
-export const modoSimulado = URL_API === '';
+if (!URL_API) {
+  throw new Error(
+    'VITE_API_URL não foi definida. Copie o arquivo .env.example para .env e informe o endereço da API (ex.: http://localhost:3333/api).',
+  );
+}
 
 /** Erro devolvido pela API, já com a mensagem pronta para exibir ao usuário. */
 export class ApiError extends Error {
@@ -37,18 +39,7 @@ export function definirAoPerderSessao(callback: (() => void) | null) {
 
 type Metodo = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type RespostaBruta = { status: number; corpo: unknown };
-
-/** Pequena espera na API simulada, para a tela se comportar como com uma API de verdade. */
-const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms));
-
 type Envio = { metodo: Metodo; caminho: string; dados: unknown; token: string | null };
-
-async function enviarSimulada({ metodo, caminho, dados, token }: Envio): Promise<RespostaBruta> {
-  // Carregado sob demanda: com uma API real, o simulador nem é baixado
-  const { requisicaoSimulada } = await import('../simulador');
-  await esperar(120 + Math.random() * 180);
-  return requisicaoSimulada(metodo, caminho, dados, token);
-}
 
 async function enviarHttp({ metodo, caminho, dados, token }: Envio): Promise<RespostaBruta> {
   let resposta: Response;
@@ -72,7 +63,7 @@ async function enviarHttp({ metodo, caminho, dados, token }: Envio): Promise<Res
 async function requisicao<T>(metodo: Metodo, caminho: string, dados?: unknown): Promise<T> {
   // O token é lido no momento da chamada (ex.: o "Sair" envia o logout e só depois limpa o token)
   const envio: Envio = { metodo, caminho, dados, token };
-  const { status, corpo } = modoSimulado ? await enviarSimulada(envio) : await enviarHttp(envio);
+  const { status, corpo } = await enviarHttp(envio);
 
   if (status >= 400) {
     const erro = corpo as { mensagem?: string; detalhes?: Record<string, string[]> } | null;

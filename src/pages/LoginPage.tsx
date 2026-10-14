@@ -6,9 +6,9 @@ import { Avatar } from '../components/Avatar';
 import { Botao } from '../components/ui/Botao';
 import { CampoTexto } from '../components/ui/Campo';
 import { useFormulario } from '../hooks/useFormulario';
-import { modoSimulado } from '../lib/api';
+
 import { ROTULO_PERFIL } from '../lib/formatacao';
-import { ACESSOS_DEMONSTRACAO } from '../simulador/acessos-demonstracao';
+import { ACESSOS_DEMONSTRACAO, mostrarAcessosDeTeste } from '../lib/acessos-demonstracao';
 
 const DESTAQUES = [
   { Icone: Gauge, titulo: 'Indicadores da frota', texto: 'Quilometragem, custos e manutenções em um só painel' },
@@ -85,11 +85,11 @@ export function LoginPage() {
             </Botao>
           </form>
 
-          {modoSimulado && (
+          {mostrarAcessosDeTeste && (
             <div className="mt-10">
               <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 <span className="h-px flex-1 bg-slate-200" />
-                Acessos de demonstração
+                Acessos de teste
                 <span className="h-px flex-1 bg-slate-200" />
               </div>
               <ul className="mt-4 grid gap-3">

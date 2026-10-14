@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, modoSimulado } from '../../lib/api';
+import { api } from '../../lib/api';
 
 type Health = { status: 'ok'; banco: 'conectado' | 'indisponivel' };
 type Estado = 'verificando' | 'online' | 'sem-banco' | 'offline';
@@ -11,28 +11,8 @@ const APARENCIA: Record<Estado, { cor: string; texto: string }> = {
   offline: { cor: 'bg-red-400', texto: 'API offline' },
 };
 
-/** Indicador de onde vêm os dados: API simulada ou estado da API real (verificado a cada 30 s). */
+/** Situação da API e do banco, verificada a cada 30 segundos. */
 export function StatusApi() {
-  return modoSimulado ? (
-    <Indicador cor="bg-marca-400" texto="Modo demonstração" dica="Os dados ficam salvos neste navegador" />
-  ) : (
-    <IndicadorApiReal />
-  );
-}
-
-function Indicador({ cor, texto, dica }: { cor: string; texto: string; dica?: string }) {
-  return (
-    <p role="status" title={dica} className="flex items-center gap-2 px-3 text-xs font-medium text-marca-200/80">
-      <span className="relative flex size-2">
-        <span className={`absolute inset-0 animate-ping rounded-full opacity-60 ${cor}`} aria-hidden />
-        <span className={`relative size-2 rounded-full ${cor}`} aria-hidden />
-      </span>
-      {texto}
-    </p>
-  );
-}
-
-function IndicadorApiReal() {
   const [estado, setEstado] = useState<Estado>('verificando');
 
   useEffect(() => {
@@ -55,5 +35,14 @@ function IndicadorApiReal() {
     };
   }, []);
 
-  return <Indicador {...APARENCIA[estado]} />;
+  const { cor, texto } = APARENCIA[estado];
+  return (
+    <p role="status" className="flex items-center gap-2 px-3 text-xs font-medium text-marca-200/80">
+      <span className="relative flex size-2">
+        <span className={`absolute inset-0 animate-ping rounded-full opacity-60 ${cor}`} aria-hidden />
+        <span className={`relative size-2 rounded-full ${cor}`} aria-hidden />
+      </span>
+      {texto}
+    </p>
+  );
 }
