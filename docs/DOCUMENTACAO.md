@@ -1,9 +1,9 @@
-# Meridian: documentação da versão inicial
+# Meridian: documentação do projeto
 
 Sistema web de controle de frota para pequenas empresas de logística e transporte.
 Trabalho de Curso, Bacharelado em Sistemas de Informação, IESGO, 2026.
 
-
+> Versão em Word, no formato ABNT: [Meridian-Documentacao.docx](Meridian-Documentacao.docx)
 
 ## Sumário
 
@@ -11,9 +11,9 @@ Trabalho de Curso, Bacharelado em Sistemas de Informação, IESGO, 2026.
 2. [Requisitos](#2-requisitos)
 3. [Tecnologias](#3-tecnologias)
 4. [Arquitetura](#4-arquitetura)
-5. [Modelo de dados](#5-modelo-de-dados)
+5. [Banco de dados](#5-banco-de-dados)
 6. [Regras de negócio](#6-regras-de-negócio)
-7. [Contrato da API](#7-contrato-da-api)
+7. [A API](#7-a-api)
 8. [Interface do sistema](#8-interface-do-sistema)
 9. [Testes e qualidade](#9-testes-e-qualidade)
 10. [Como executar](#10-como-executar)
@@ -40,17 +40,28 @@ O **Meridian** centraliza essas informações em um único sistema web, acessív
 - permitir cadastrar, consultar, editar e inativar veículos e motoristas, validando os documentos brasileiros (placa, chassi, RENAVAM, CPF e CNH);
 - apresentar um painel com indicadores de quilometragem, custos e manutenções;
 - gerar alertas de manutenção preventiva por quilometragem ou por data, programando automaticamente as manutenções recorrentes;
-- disponibilizar uma versão de demonstração que funcione sem servidor.
+- armazenar os dados em um banco relacional, com as regras de integridade garantidas pelo próprio banco.
 
-### 1.3 Escopo da versão inicial
+### 1.3 O que o sistema tem hoje
 
-Esta versão traz o **front-end completo**, funcionando com uma **API simulada no próprio navegador**. A prioridade foi validar a interface e as regras de negócio antes de investir no servidor.
+O Meridian está completo nas três camadas:
 
-O simulador atende as mesmas rotas REST que a API real terá. As validações, as mensagens de erro e os códigos HTTP também são os mesmos, e todo esse comportamento é coberto por testes automatizados. Por isso, ele funciona como uma **especificação executável do back-end**: o contrato das rotas ([seção 7](#7-contrato-da-api)), o modelo de dados ([seção 5](#5-modelo-de-dados)) e as regras de negócio ([seção 6](#6-regras-de-negócio)) já estão definidos e verificados.
+| Camada | O que é | Onde fica |
+| --- | --- | --- |
+| **Painel web** | As telas que o usuário usa, em React | `src/` |
+| **API REST** | O servidor com as regras de negócio, em Node.js e Express | `api/` |
+| **Banco de dados** | PostgreSQL, com 6 tabelas | `api/sql/schema.sql` |
 
-Para trocar o simulador por uma API real, basta configurar a variável `VITE_API_URL`. As telas não mudam.
+O painel **não acessa o banco diretamente**: ele conversa com a API por HTTP, e só a API fala com o PostgreSQL. Essa separação é o que permite, mais adiante, trocar as telas ou publicar a API em um servidor sem reescrever o resto.
 
-**Fora desta versão:** o servidor e o banco de dados reais, a implantação em produção e o módulo de viagens. O escopo do módulo de viagens ainda será definido com o orientador.
+### 1.4 Como o projeto foi construído
+
+O desenvolvimento foi feito em duas etapas:
+
+1. **Painel e regras de negócio**, validados com uma API simulada que rodava no próprio navegador. Isso permitiu acertar as telas e as regras antes de montar servidor e banco.
+2. **API e banco de dados reais**, implementados seguindo o contrato de rotas e o modelo de dados que a etapa anterior já havia definido e testado.
+
+As regras de negócio (cálculo da situação da manutenção, recorrência, validação de documentos) foram **aproveitadas sem reescrita** na passagem de uma etapa para a outra, por terem sido escritas como funções puras e em TypeScript nas duas pontas. A API simulada foi removida ao fim da segunda etapa.
 
 ## 2. Requisitos
 
@@ -58,7 +69,7 @@ Para trocar o simulador por uma API real, basta configurar a variável `VITE_API
 
 | Código | Requisito | Como foi atendido |
 | --- | --- | --- |
-| RNF01 | Autenticação de usuários | Login com e-mail e senha; todas as telas protegidas; perfis Administrador e Gestor; gestão de usuários; troca de senha; sessão de 8 horas |
+| RNF01 | Autenticação de usuários | Login com e-mail e senha; todas as telas protegidas; perfis Administrador e Gestor; gestão de usuários; troca de senha; sessão de 8 horas; senhas guardadas com bcrypt |
 | RF01 | Cadastro, consulta, edição e exclusão de veículos e motoristas | Listagens com busca e filtros; validação de placa, chassi, RENAVAM, CPF e CNH; bloqueio de cadastros duplicados; vínculo entre motorista e veículo; exclusão lógica com reativação |
 | RF02 | Dashboard com indicadores de quilometragem, custos e manutenções | Indicadores da frota; custo mensal dos últimos 12 meses; custos de preventiva × corretiva; custo e quilometragem por veículo |
 | RF03 | Alertas de manutenção preventiva por km ou por data | Situação calculada (em dia, próxima do limite, vencida); antecedência configurável; próxima preventiva programada automaticamente ao concluir; alertas de CNH vencida ou vencendo |
@@ -68,7 +79,7 @@ Para trocar o simulador por uma API real, basta configurar a variável `VITE_API
 - **Responsividade:** o sistema funciona no computador e no celular. No celular, o menu vira uma gaveta e as listagens viram cartões.
 - **Padrões brasileiros:** datas, moeda, placas no padrão antigo e no Mercosul. A data de referência é calculada no fuso de Brasília.
 - **Erros por campo:** as mensagens de erro apontam exatamente qual campo do formulário corrigir.
-- **Integridade:** cada alteração é aplicada por inteiro ou não é aplicada, como uma transação de banco de dados.
+- **Integridade:** cada operação é aplicada por inteiro ou não é aplicada, usando transações do banco de dados.
 
 ### 2.3 Perfis de acesso
 
@@ -79,9 +90,10 @@ Para trocar o simulador por uma API real, basta configurar a variável `VITE_API
 | Trocar a própria senha | ✔ | ✔ |
 | Gerenciar usuários | ✔ | — |
 | Alterar a antecedência dos alertas | ✔ | — |
-| Restaurar os dados de demonstração | ✔ | — |
 
 ## 3. Tecnologias
+
+**Painel web**
 
 | Tecnologia | Versão | Uso no projeto |
 | --- | --- | --- |
@@ -90,57 +102,81 @@ Para trocar o simulador por uma API real, basta configurar a variável `VITE_API
 | Vite | 8.3 | Servidor de desenvolvimento e geração da versão de produção |
 | React Router | 8.4 | Navegação entre telas e rotas protegidas |
 | Tailwind CSS | 4.3 | Estilização e identidade visual (paleta azul) |
-| Zod | 4.6 | Validação dos dados recebidos pela API |
 | lucide-react | 1.50 | Ícones |
+
+**API e banco de dados**
+
+| Tecnologia | Versão | Uso no projeto |
+| --- | --- | --- |
+| Node.js | 24 | Ambiente de execução do servidor (mínimo 22.12) |
+| Express | 5.1 | Recebe as requisições HTTP e as encaminha às rotas |
+| PostgreSQL | 18 | Banco de dados relacional (mínimo 16) |
+| node-postgres (`pg`) | 8.16 | Conexão com o banco, com SQL escrito à mão |
+| bcrypt | 3.0 | Guarda as senhas em formato irreversível |
+| Zod | 4.6 | Validação dos dados recebidos pela API |
 | Vitest | 5.0 | Testes automatizados |
-| oxlint | 1.86 | Análise estática do código |
-| Node.js | 24 | Ambiente de desenvolvimento (mínimo 22.12) |
+
+O TypeScript é usado nas duas pontas. Foi isso que permitiu aproveitar as regras de negócio do painel no servidor sem reescrevê-las.
 
 ## 4. Arquitetura
 
 ### 4.1 Visão geral
 
-O sistema é uma aplicação de página única (SPA) organizada em camadas. As telas não sabem de onde vêm os dados: elas pedem as informações ao cliente da API. É o cliente que decide para onde vai a requisição: para a API simulada (versão atual) ou para uma API real em servidor (próxima etapa).
+O sistema é dividido em três camadas, cada uma com uma responsabilidade:
 
-![Arquitetura em camadas do Meridian](imagens/arquitetura.png)
+![Arquitetura do Meridian](imagens/arquitetura.png)
+
+Lendo de cima para baixo: o usuário interage com as telas; as telas pedem dados ao cliente da API; o cliente envia uma requisição HTTP; o servidor confere quem está pedindo e encaminha para a rota certa; a rota aplica as regras de negócio e consulta o banco.
 
 ### 4.2 Organização do código
 
+**Painel (`src/`)**
+
 | Pasta | Responsabilidade |
 | --- | --- |
-| `src/pages` | Telas do sistema, uma pasta por funcionalidade |
-| `src/components` | Componentes reutilizáveis: genéricos (botões, campos, janelas, tabelas) e específicos do sistema (placa, gráficos, menu) |
-| `src/auth` | Login, sessão e proteção das rotas por perfil |
-| `src/hooks` | Lógica de tela reaproveitável: consultas à API e controle dos formulários |
-| `src/lib` | Cliente da API, tipos dos dados, formatação e máscaras dos campos |
-| `src/simulador` | API simulada: roteador, módulos de negócio, regras e banco no `localStorage` |
+| `pages` | Telas do sistema, uma pasta por funcionalidade |
+| `components` | Componentes reutilizáveis: genéricos (botões, campos, janelas, tabelas) e específicos do sistema (placa, gráficos, menu) |
+| `auth` | Login, sessão e proteção das rotas por perfil |
+| `hooks` | Lógica de tela reaproveitável: consultas à API e controle dos formulários |
+| `lib` | Cliente da API, tipos dos dados, formatação e máscaras dos campos |
+
+**API (`api/`)**
+
+| Arquivo ou pasta | Responsabilidade |
+| --- | --- |
+| `sql/schema.sql` | Tabelas, tipos, chaves e regras de integridade do banco |
+| `src/app.ts` | Monta o servidor: rotas, CORS e tratamento de erros |
+| `src/banco.ts` | Conexão com o PostgreSQL, consultas e transações |
+| `src/autenticacao.ts` | Confere o token e o perfil de cada requisição |
+| `src/rotas` | Uma parte por assunto: veículos, motoristas, manutenções, alertas, dashboard, usuários, configurações |
+| `src/regras` | Regras puras: situação, recorrência, validações, datas e senhas |
+| `src/scripts` | Criação do banco e dados de demonstração |
+| `src/testes` | Testes da API contra um PostgreSQL de verdade |
 
 ### 4.3 Fluxo de uma requisição
 
 Exemplo: o usuário conclui uma manutenção.
 
 1. O usuário clica em **Concluir** e informa a data, a quilometragem e o custo do serviço.
-2. A tela envia `POST /manutencoes/:id/concluir` pelo cliente da API, junto com o token da sessão.
-3. O roteador confere a sessão e o perfil do usuário e chama o módulo de manutenções.
-4. O módulo valida os dados, marca a manutenção como realizada e atualiza o hodômetro do veículo.
-5. Se a manutenção for recorrente, a próxima é programada a partir da data e da quilometragem do serviço.
-6. A alteração só é gravada se todas as etapas derem certo. A tela recebe a resposta e atualiza a lista e os alertas.
+2. A tela envia `POST /api/manutencoes/11/concluir` pelo cliente da API, junto com o token da sessão.
+3. O servidor confere o token na tabela `sessoes` e verifica se o usuário continua ativo.
+4. A rota de manutenções abre uma **transação** no banco e, dentro dela:
+   - valida os dados recebidos;
+   - marca a manutenção como realizada;
+   - atualiza o hodômetro do veículo, se a quilometragem do serviço for maior;
+   - se a manutenção for recorrente, cria a próxima a partir da data e do km do serviço.
+5. A transação é confirmada. Se qualquer etapa falhar, nada é gravado.
+6. A tela recebe a manutenção concluída e a próxima programada, e atualiza a lista e os alertas.
 
-### 4.4 API simulada
+### 4.4 Por que transações
 
-A cada requisição, o simulador:
+Concluir uma manutenção altera três coisas: a própria manutenção, o hodômetro do veículo e a criação da próxima preventiva. Se o sistema gravasse uma e falhasse na outra, a frota ficaria com dados inconsistentes — por exemplo, uma manutenção marcada como feita sem a próxima programada, fazendo o veículo deixar de ser alertado.
 
-1. localiza a rota correspondente;
-2. verifica o login e o perfil do usuário;
-3. executa o módulo de negócio daquela rota.
+A transação resolve isso: o banco só confirma as alterações se **todas** derem certo. Caso contrário, desfaz tudo (`ROLLBACK`).
 
-Quando a requisição altera dados, o trabalho é feito sobre uma cópia do banco. Essa cópia só substitui os dados anteriores se tudo der certo, como numa transação de banco de dados. As respostas são convertidas em JSON, então a tela recebe exatamente o que receberia de uma API HTTP.
+## 5. Banco de dados
 
-Os dados ficam no `localStorage` do navegador. Na primeira execução, o sistema cria uma frota de demonstração com 6 veículos, 5 motoristas e 24 manutenções. As datas são calculadas a partir do dia atual, para que sempre existam situações de alerta para mostrar.
-
-## 5. Modelo de dados
-
-O modelo lógico relacional abaixo mostra as tabelas, as colunas, as chaves e os relacionamentos, na notação pé de galinha. As tabelas são exatamente as que a API simulada usa. Os tipos das colunas seguem o padrão do PostgreSQL, que é a proposta para o banco de dados real.
+O modelo abaixo é o que está implementado em `api/sql/schema.sql`. Os tipos são os do PostgreSQL.
 
 ![Modelo lógico do banco de dados](modelagem-banco-de-dados.png)
 
@@ -157,11 +193,26 @@ O modelo lógico relacional abaixo mostra as tabelas, as colunas, as chaves e os
 
 ### 5.2 Relacionamentos
 
-- **motoristas — veiculos (0..1 : 0..1):** cada veículo tem no máximo um motorista responsável, e cada motorista responde por no máximo um veículo.
+- **motoristas — veiculos (0..1 : 0..1):** cada veículo tem no máximo um motorista responsável, e cada motorista responde por no máximo um veículo. Garantido por uma restrição `UNIQUE` na coluna `motorista_id` da tabela `veiculos`.
 - **veiculos — manutencoes (1 : 0..N):** cada manutenção pertence a um único veículo, e cada veículo pode ter várias manutenções.
-- **usuarios — sessoes (1 : 0..N):** cada usuário pode ter várias sessões abertas.
+- **usuarios — sessoes (1 : 0..N):** cada usuário pode ter várias sessões abertas. Ao apagar um usuário, suas sessões são apagadas junto (`ON DELETE CASCADE`).
 
-A **situação** de uma manutenção (vencida, próxima do limite ou em dia) não é gravada no banco. Ela muda sozinha com o passar dos dias e com a quilometragem, então é calculada a cada consulta.
+### 5.3 Regras garantidas pelo banco
+
+Além da validação feita pela API, o próprio banco recusa dados inválidos. Isso protege os dados mesmo que algum programa acesse o banco por fora do sistema.
+
+| Tipo | Exemplos |
+| --- | --- |
+| **Tipos enumerados** | `perfil_usuario`, `status_veiculo`, `categoria_cnh`, `tipo_manutencao`, `status_manutencao` — a coluna só aceita os valores previstos |
+| **Valores únicos** | Placa, chassi e RENAVAM do veículo; CPF e CNH do motorista; e-mail do usuário |
+| **Verificações (CHECK)** | Formato da placa (padrão antigo e Mercosul); chassi com 17 caracteres sem as letras I, O e Q; CPF e CNH só com dígitos; preventiva pendente precisa de data ou km; manutenção realizada precisa da data de realização; quilometragem e custo não negativos |
+| **Chaves estrangeiras** | Uma manutenção só existe para um veículo existente |
+
+### 5.4 O que não é gravado
+
+A **situação** de uma manutenção (vencida, próxima do limite ou em dia) não tem coluna no banco. Ela muda sozinha com o passar dos dias e com a quilometragem do veículo, então é calculada a cada consulta, comparando a data programada e o km limite com a data de hoje, o hodômetro atual e a antecedência configurada.
+
+Gravar esse valor exigiria recalcular todas as manutenções todos os dias, e qualquer falha nesse processo deixaria alertas errados na tela.
 
 ## 6. Regras de negócio
 
@@ -176,13 +227,17 @@ A **situação** de uma manutenção (vencida, próxima do limite ou em dia) nã
 | RN07 | Manutenções realizadas não podem ser excluídas, só corrigidas. Manutenções canceladas não podem ser editadas. |
 | RN08 | Placa, chassi, RENAVAM, CPF, CNH e e-mail não podem se repetir. O CPF tem os dígitos verificadores conferidos. A placa aceita o padrão antigo e o Mercosul. O chassi tem 17 caracteres e não pode ter as letras I, O e Q. |
 | RN09 | A CNH é classificada como vencida, vencendo (dentro da antecedência em dias) ou válida. |
-| RN10 | Um usuário inativado perde o acesso imediatamente, mesmo que esteja com a sessão aberta. As senhas são guardadas com sal e hash SHA-256. |
-| RN11 | A data de referência ("hoje") é calculada no fuso de Brasília, seja qual for o fuso do computador. |
+| RN10 | Um usuário inativado perde o acesso imediatamente: as sessões abertas dele são apagadas. As senhas são guardadas com bcrypt. |
+| RN11 | A data de referência ("hoje") é calculada no fuso de Brasília, seja qual for o fuso do servidor. |
 
-## 7. Contrato da API
+## 7. A API
+
+### 7.1 Como funciona a comunicação
 
 - **Formato:** todas as requisições e respostas usam JSON.
-- **Autenticação:** todas as rotas exigem o cabeçalho `Authorization: Bearer <token>`, exceto `GET /health` e `POST /auth/login`.
+- **Endereço base:** `/api` (em desenvolvimento, `http://localhost:3333/api`).
+- **Autenticação:** todas as rotas exigem o cabeçalho `Authorization: Bearer <token>`, exceto `GET /health` e `POST /auth/login`. O token é obtido no login e vale 8 horas.
+- **CORS:** o navegador só deixa o painel chamar a API se ela autorizar o endereço de onde a página veio. Os endereços autorizados ficam na variável `ORIGEM_PERMITIDA`.
 - **Erros:** seguem o formato abaixo. O campo `detalhes` diz qual campo do formulário destacar.
 
   ```json
@@ -200,9 +255,11 @@ A **situação** de uma manutenção (vencida, próxima do limite ou em dia) nã
 | 404 | Não encontrado |
 | 409 | Registro duplicado |
 
+### 7.2 Rotas
+
 | Método | Rota | Descrição | Acesso |
 | --- | --- | --- | --- |
-| GET | `/health` | Situação da API | Público |
+| GET | `/health` | Situação da API e do banco | Público |
 | POST | `/auth/login` | Recebe `{ email, senha }` e devolve `{ token, usuario }` | Público |
 | POST | `/auth/logout` | Sair | Logado |
 | GET | `/auth/me` | Dados do usuário logado | Logado |
@@ -223,15 +280,21 @@ A **situação** de uma manutenção (vencida, próxima do limite ou em dia) nã
 | GET | `/alertas` | Alertas de manutenção e de CNH (RF03) | Logado |
 | GET | `/dashboard` | Indicadores (RF02) | Logado |
 | GET · PUT | `/configuracoes` | Consultar e alterar a antecedência dos alertas | Logado (só o Administrador altera) |
+| POST | `/demonstracao/restaurar` | Recria os dados de exemplo | Administrador |
 
-O comportamento de cada rota está implementado em `src/simulador/modulos/` e os testes ficam em `src/simulador/simulador.test.ts`.
+### 7.3 Decisões de implementação
+
+- **SQL escrito à mão**, em vez de um ORM. As consultas ficam visíveis no código e os recursos do PostgreSQL são usados diretamente. O dashboard, por exemplo, soma os custos com `SUM`, `COUNT FILTER` e `GROUP BY`, deixando o trabalho pesado com o banco.
+- **Nomes das colunas:** o banco usa `snake_case` (`km_atual`), que é o padrão do PostgreSQL, e o painel recebe `camelCase` (`kmAtual`), que é o padrão do JavaScript. A conversão é feita no próprio `SELECT`, com `AS "kmAtual"`.
+- **Sessões em tabela**, com token aleatório de 64 caracteres. Isso permite encerrar a sessão de alguém na hora, o que um token autossuficiente (como o JWT) não permitiria sem controle extra.
+- **Restauração dos dados de demonstração** protegida por uma variável de ambiente, desligada por padrão: em um sistema em uso ela apagaria tudo.
 
 ## 8. Interface do sistema
 
 A cor da marca é o azul. Verde, amarelo e vermelho ficam reservados para status (em dia, atenção e vencido) e sempre vêm acompanhados de texto, para que a informação não dependa só da cor. A fonte Plus Jakarta Sans vem junto com o projeto, então funciona sem internet.
 
 ### Login
-O usuário entra com e-mail e senha. Na demonstração, a tela mostra atalhos para os acessos de teste.
+O usuário entra com e-mail e senha. Durante o desenvolvimento, a tela mostra atalhos para os acessos de teste; na versão de produção, eles não aparecem.
 
 ![Tela de login](imagens/01-login.png)
 
@@ -270,7 +333,7 @@ Permite programar uma manutenção por data, por km ou pelos dois, definir de qu
 ![Gestão de usuários](imagens/08-usuarios.png)
 
 ### Configurações
-Antecedência dos alertas, troca de senha e restauração dos dados de demonstração.
+Antecedência dos alertas e troca de senha.
 
 ![Configurações](imagens/09-configuracoes.png)
 
@@ -284,67 +347,95 @@ Antecedência dos alertas, troca de senha e restauração dos dados de demonstra
 
 ## 9. Testes e qualidade
 
-O projeto tem **47 testes automatizados**, que rodam com `npm test`.
+### 9.1 Testes automatizados
+
+A API tem **64 testes automatizados**, que rodam com `npm test` na pasta `api`. Eles são executados contra um **banco PostgreSQL de verdade**, não contra um banco falso: antes de cada teste, as tabelas são recriadas e preenchidas com os dados de demonstração, em um banco separado (`meridian_teste`).
+
+Essa escolha é importante porque boa parte das regras do sistema é garantida pelo próprio banco. Um teste com banco falso não perceberia, por exemplo, se uma restrição `UNIQUE` ou um `CHECK` estivesse faltando.
 
 | Grupo | O que verifica | Testes |
 | --- | --- | :---: |
-| Autenticação (RNF01) | Login, senha errada, rotas protegidas, logout, acesso restrito ao Administrador, usuário inativado | 6 |
-| Veículos (RF01) | Padronização dos documentos, cadastros duplicados, motorista em dois veículos, transação, hodômetro, inativação | 6 |
-| Motoristas (RF01) | Validação e duplicidade de CPF, desvínculo do veículo ao inativar | 2 |
-| Manutenções e alertas (RF03) | Geração dos alertas, data ou km obrigatório, recorrência, histórico, antecedência | 5 |
-| Dashboard e demonstração | Resumo da frota e restauração dos dados | 2 |
+| Autenticação (RNF01) | Login, senha errada, rotas protegidas, logout, acesso restrito ao Administrador, usuário inativado, troca de senha, senha guardada como hash | 9 |
+| Veículos (RF01) | Padronização dos documentos, cadastros duplicados, motorista em dois veículos, transação desfeita em caso de erro, hodômetro, inativação | 6 |
+| Motoristas (RF01) | Validação e duplicidade de CPF, documentos com pontuação, desvínculo ao inativar, situação da CNH | 4 |
+| Manutenções e alertas (RF03) | Geração dos alertas, data ou km obrigatório, recorrência, dupla conclusão, histórico, data futura, antecedência, cancelamento | 8 |
+| Dashboard (RF02) | Resumo da frota, quilometragem, custos, histórico preservado após inativar veículo | 2 |
+| Filtros e busca | Busca por placa, marca e motorista ignorando acentos; filtros de manutenção | 2 |
+| Restauração da demonstração | Recria a frota sem deslogar quem restaurou; restrição ao Administrador | 2 |
+| Respostas da API | Situação da API, CORS, rota inexistente, registro inexistente, identificador inválido | 5 |
 | Situação e recorrência | Em dia, próxima, vencida por data e por km, critério que vence primeiro, próxima programação, CNH | 11 |
-| Validações | Fuso de Brasília, CPF, placa, chassi, RENAVAM, CNH, telefone, valores, datas, busca, SHA-256 (vetores oficiais do NIST) | 15 |
-| **Total** | | **47** |
+| Validações | Fuso de Brasília, CPF, placa, chassi, RENAVAM, CNH, telefone, valores, datas, busca, senhas com bcrypt | 15 |
+| **Total** | | **64** |
 
-Além dos testes automatizados:
+### 9.2 Verificações complementares
 
-- **Tipagem:** o comando `npm run typecheck` verifica os tipos de todo o código.
-- **Análise estática:** o comando `npm run lint` roda o oxlint.
-- **Testes manuais no navegador:**
-  - login;
-  - cadastros;
-  - conclusão de manutenção com recorrência;
-  - dados mantidos depois de recarregar a página;
-  - acesso com o perfil Gestor;
-  - uso em tela de celular.
+- **Tipagem:** `npm run typecheck` verifica os tipos de todo o código, no painel e na API.
+- **Análise estática:** `npm run lint` roda o oxlint no painel.
+- **Testes manuais no navegador:** login, cadastros, conclusão de manutenção com recorrência, restauração dos dados, acesso com o perfil Gestor e uso em tela de celular.
 
 ## 10. Como executar
 
-É preciso ter o Node.js 22.12 ou superior instalado.
+**Pré-requisitos:** [Node.js](https://nodejs.org) 22.12 ou superior e [PostgreSQL](https://www.postgresql.org/download/) 16 ou superior.
+
+**1. Criar o banco de dados**
+
+```bash
+psql -U postgres -c "CREATE DATABASE meridian"
+```
+
+**2. Subir a API** (em um terminal)
+
+```bash
+cd api
+npm install
+cp .env.example .env     # preencha a senha do PostgreSQL em PGPASSWORD
+npm run banco:recriar    # cria as tabelas e grava os dados de demonstração
+npm run dev              # a API fica em http://localhost:3333/api
+```
+
+**3. Subir o painel** (em outro terminal, na pasta do projeto)
 
 ```bash
 npm install
+cp .env.example .env     # já vem apontando para a API local
 npm run dev
 ```
 
-Depois, abra <http://localhost:5173> no navegador.
+Abra <http://localhost:5173>.
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
 | Administrador | `admin@meridian.local` | `Frota@2026` |
 | Gestor de frota | `gestor@meridian.local` | `Gestor@2026` |
 
-Os usuários de demonstração são pessoas fictícias. Para voltar aos dados originais, entre como Administrador e use **Configurações → Restaurar dados de demonstração**.
+### 10.1 Dados de demonstração
+
+O comando `npm run banco:popular` cria 6 veículos (um deles inativo), 5 motoristas e 24 manutenções, com um ano de histórico de custos. As datas são calculadas a partir do dia da execução, para que sempre existam situações de alerta: preventiva vencida por data e por km, preventivas próximas do limite, CNH vencida e CNH vencendo.
+
+Para recomeçar, entre como Administrador e use **Configurações → Restaurar dados de demonstração**, ou rode `npm run banco:popular` de novo.
 
 ## 11. Limitações e próximas etapas
 
-**Limitações da versão inicial**
+### 11.1 Limitações
 
-- Os dados ficam no navegador. Cada navegador tem a sua própria cópia, e os usuários não compartilham dados entre si.
-- O login protege a interface, mas não os dados em si. Para proteger os dados de verdade, é preciso um servidor.
-- Não há cópia de segurança dos dados nem envio de notificações por e-mail.
+- O sistema roda na máquina do desenvolvedor. Ainda não foi publicado em um servidor acessível pela internet.
+- Não há cópia de segurança automática do banco nem envio de notificações por e-mail.
+- Não há registro de auditoria: o sistema não guarda quem alterou cada cadastro.
 
-**Próximas etapas, até a versão final (10/11/2026)**
+### 11.2 Próximas etapas
 
-- Se fizer parte do escopo final, implementar a API real em **Node.js com TypeScript e Express**, seguindo o [contrato da seção 7](#7-contrato-da-api), e o banco **PostgreSQL**, seguindo o [modelo da seção 5](#5-modelo-de-dados). As validações e as regras de negócio do simulador serão reaproveitadas no servidor.
-- Publicar o sistema em um serviço de hospedagem.
-- Definir com o orientador o escopo do módulo de viagens.
+Até a versão final, prevista para 10/11/2026:
+
+- publicar a API e o banco em um serviço de hospedagem e o painel em outro, deixando o sistema acessível pela internet;
+- definir com o orientador o escopo do módulo de viagens.
 
 ## Referências
 
-- NATIONAL INSTITUTE OF STANDARDS AND TECHNOLOGY. **FIPS PUB 180-4**: Secure Hash Standard (SHS). Gaithersburg: NIST, 2015. Disponível em: https://doi.org/10.6028/NIST.FIPS.180-4.
 - POSTGRESQL GLOBAL DEVELOPMENT GROUP. **PostgreSQL Documentation**. Disponível em: https://www.postgresql.org/docs/.
+- OPENJS FOUNDATION. **Express Documentation**. Disponível em: https://expressjs.com.
+- NODE.JS. **Node.js Documentation**. Disponível em: https://nodejs.org/docs/.
+- NODE-POSTGRES. **node-postgres Documentation**. Disponível em: https://node-postgres.com.
+- PROVOS, Niels; MAZIÈRES, David. **A Future-Adaptable Password Scheme**. In: USENIX Annual Technical Conference, 1999. Disponível em: https://www.usenix.org/legacy/events/usenix99/provos.html.
 - REACT. **React Documentation**. Disponível em: https://react.dev.
 - REACT ROUTER. **React Router Documentation**. Disponível em: https://reactrouter.com.
 - TAILWIND LABS. **Tailwind CSS Documentation**. Disponível em: https://tailwindcss.com/docs.
