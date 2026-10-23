@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "build:servidor": "tsc -b && cross-env VITE_API_URL=/api vite build"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -28,6 +29,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "cross-env": "^10.1.0",
     "oxlint": "^1.86.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",

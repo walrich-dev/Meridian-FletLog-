@@ -8,6 +8,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import { z, ZodError } from 'zod';
 import { pool } from './banco.js';
 import { ErroApi } from './erros.js';
+import { pastaDoPainel, servirPainel } from './painel.js';
 import { rotasAlertas } from './rotas/alertas.js';
 import { rotasAuth } from './rotas/auth.js';
 import { rotasConfiguracoes } from './rotas/configuracoes.js';
@@ -48,15 +49,32 @@ const origensPermitidas = (process.env.ORIGEM_PERMITIDA ?? 'http://localhost:517
 const emProducao = process.env.NODE_ENV === 'production';
 const ehLocalhost = (origem: string) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origem);
 
+/**
+ * A requisição veio da própria página que esta API entregou?
+ *
+ * Com SERVIR_PAINEL a API serve o painel e os dois ficam no mesmo endereço.
+ * Aí o navegador manda Origin igual ao Host, e seria absurdo recusar: é a
+ * nossa própria página chamando a nossa própria API.
+ */
+export function ehMesmaOrigem(origem: string, host?: string): boolean {
+  if (!host) return false;
+  try {
+    return new URL(origem).host === host;
+  } catch {
+    return false;
+  }
+}
+
 app.use(
-  cors({
-    origin(origem, responder) {
-      // Sem origem: chamadas que não vêm do navegador (curl, testes, outro servidor)
-      if (!origem) return responder(null, true);
-      if (origensPermitidas.includes(origem)) return responder(null, true);
-      if (!emProducao && ehLocalhost(origem)) return responder(null, true);
-      responder(new Error(`Origem não autorizada: ${origem}`));
-    },
+  cors((req, responder) => {
+    const origem = req.headers.origin;
+
+    // Sem origem: chamadas que não vêm do navegador (curl, testes, outro servidor)
+    if (!origem) return responder(null, { origin: true });
+    if (origensPermitidas.includes(origem)) return responder(null, { origin: true });
+    if (ehMesmaOrigem(origem, req.headers.host)) return responder(null, { origin: true });
+    if (!emProducao && ehLocalhost(origem)) return responder(null, { origin: true });
+    responder(new Error(`Origem não autorizada: ${origem}`));
   }),
 );
 app.use(express.json({ limit: '1mb' }));
@@ -85,10 +103,21 @@ app.use('/api/dashboard', rotasDashboard);
 app.use('/api/configuracoes', rotasConfiguracoes);
 app.use('/api/demonstracao', rotasDemonstracao);
 
-// Rota inexistente
-app.use((req, res) => {
+// Rota de API inexistente
+app.use('/api', (req, res) => {
   res.status(404).json({ mensagem: `Rota não encontrada: ${req.method} ${req.path}` });
 });
+
+// Fora de /api: ou entregamos o painel (quando SERVIR_PAINEL está definida),
+// ou não há nada para responder.
+const pastaPainel = pastaDoPainel();
+if (pastaPainel) {
+  servirPainel(app, pastaPainel);
+} else {
+  app.use((req, res) => {
+    res.status(404).json({ mensagem: `Rota não encontrada: ${req.method} ${req.path}` });
+  });
+}
 
 // -----------------------------------------------------------------------------
 // Tratamento de erros: o último middleware, com quatro parâmetros

@@ -3,6 +3,7 @@
 // O banco de teste (meridian_teste) é recriado antes de cada teste, para que um
 // não interfira no outro.
 import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
+import { ehMesmaOrigem } from '../app.js';
 import { pool } from '../banco.js';
 import { ADMIN, encerrar, entrar, GESTOR, hojeTexto, iniciarApi, pedir, prepararBanco } from './ajuda.js';
 
@@ -458,6 +459,24 @@ describe('Respostas da API', () => {
     expect(resposta.headers.get('referrer-policy')).toBe('no-referrer');
     // Não anuncia que o servidor é Express
     expect(resposta.headers.get('x-powered-by')).toBeNull();
+  });
+
+  it('recusa um site qualquer que tente usar a API (CORS)', async () => {
+    const resposta = await fetch((await iniciarApi()) + '/health', {
+      headers: { Origin: 'https://site-de-terceiros.example' },
+    });
+    expect(resposta.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('reconhece a própria origem, para quando a API serve o painel (SERVIR_PAINEL)', () => {
+    // Mesmo host: é a nossa página chamando a nossa API
+    expect(ehMesmaOrigem('https://meridian.trycloudflare.com', 'meridian.trycloudflare.com')).toBe(true);
+    expect(ehMesmaOrigem('http://localhost:3333', 'localhost:3333')).toBe(true);
+    // Host diferente, porta diferente ou lixo: não é
+    expect(ehMesmaOrigem('https://outro.example', 'meridian.trycloudflare.com')).toBe(false);
+    expect(ehMesmaOrigem('http://localhost:3333', 'localhost:5173')).toBe(false);
+    expect(ehMesmaOrigem('nao-e-uma-url', 'localhost:3333')).toBe(false);
+    expect(ehMesmaOrigem('http://localhost:3333', undefined)).toBe(false);
   });
 
   it('responde 404 em rota inexistente', async () => {

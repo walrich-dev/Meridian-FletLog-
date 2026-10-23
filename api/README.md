@@ -29,6 +29,8 @@ psql -U postgres -c "CREATE DATABASE meridian"
 | `npm run typecheck` | Verifica os tipos TypeScript |
 | `npm run build` | Gera a versão de produção em `dist/` |
 | `npm start` | Executa a versão de produção |
+| `npm run servidor` | Sobe a API em modo produção servindo também o painel, num só endereço ([guia](../docs/SERVIDOR-LOCAL.md)) |
+| `npm run usuario:criar` | Cadastra um usuário pela linha de comando; repetir o e-mail troca a senha |
 | `npm run banco:criar` | Cria as tabelas a partir de `sql/schema.sql` (apaga os dados) |
 | `npm run banco:popular` | Grava a frota de demonstração |
 | `npm run banco:recriar` | Os dois anteriores, em sequência |
@@ -45,7 +47,8 @@ psql -U postgres -c "CREATE DATABASE meridian_teste"
 | --- | --- |
 | `PGHOST` · `PGPORT` · `PGUSER` · `PGPASSWORD` · `PGDATABASE` | Conexão com o PostgreSQL |
 | `PORT` | Porta da API (padrão 3333) |
-| `ORIGEM_PERMITIDA` | Endereços do painel autorizados a chamar a API (CORS), separados por vírgula. Em desenvolvimento, qualquer porta de `localhost` também é aceita |
+| `ORIGEM_PERMITIDA` | Endereços do painel autorizados a chamar a API (CORS), separados por vírgula. Requisições da mesma origem da API são sempre aceitas; em desenvolvimento, qualquer porta de `localhost` também |
+| `SERVIR_PAINEL` | Pasta do painel gerado (ex.: `../dist`). Com ela a API entrega o site também, num só endereço |
 | `NODE_ENV` | `production` liga as proteções de produção: CORS restrito a `ORIGEM_PERMITIDA`, restauração de demonstração bloqueada e comandos destrutivos travados |
 | `CONFIAR_PROXY` | Quantos proxies existem na frente da API (`1` em hospedagens como Render). Sem isso o limite por IP veria o IP do proxy em todas as requisições |
 | `PERMITIR_RESTAURAR_DEMONSTRACAO` | `true` libera a restauração dos dados de exemplo. A restauração apaga tudo, e em produção fica desligada mesmo com `true` |
@@ -53,7 +56,8 @@ psql -U postgres -c "CREATE DATABASE meridian_teste"
 
 O arquivo `.env` não vai para o GitHub.
 
-Para colocar o sistema no ar, veja [docs/IMPLANTACAO.md](../docs/IMPLANTACAO.md).
+Para colocar o sistema no ar: [docs/IMPLANTACAO.md](../docs/IMPLANTACAO.md) (nuvem) ou
+[docs/SERVIDOR-LOCAL.md](../docs/SERVIDOR-LOCAL.md) (no seu próprio computador).
 
 ## Organização
 
@@ -67,6 +71,7 @@ api/
     ├── banco.ts         conexão com o PostgreSQL, consultas e transações
     ├── autenticacao.ts  confere o token e o perfil de cada requisição
     ├── seguranca.ts     cabeçalhos HTTP e limite de tentativas por IP
+    ├── painel.ts        entrega o painel gerado, quando SERVIR_PAINEL está definida
     ├── consultas.ts     trechos de SQL reaproveitados
     ├── erros.ts         erros que viram respostas HTTP
     ├── rotas/           uma parte por assunto: veículos, motoristas, manutenções...

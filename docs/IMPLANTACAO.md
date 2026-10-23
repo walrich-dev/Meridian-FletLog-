@@ -1,5 +1,8 @@
 # Implantação do Meridian
 
+Como colocar o sistema no ar **em serviços de nuvem**. Para usar o seu próprio
+computador como servidor, veja [SERVIDOR-LOCAL.md](SERVIDOR-LOCAL.md).
+
 Como colocar o sistema no ar. São três partes independentes, nesta ordem:
 
 1. **Banco de dados** PostgreSQL
