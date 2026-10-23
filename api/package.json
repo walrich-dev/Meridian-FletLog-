@@ -13,7 +13,7 @@
     "banco:popular": "tsx --env-file=.env src/scripts/popular-banco.ts",
     "banco:recriar": "npm run banco:criar && npm run banco:popular",
     "test": "vitest run",
-    "servidor": "cross-env NODE_ENV=production SERVIR_PAINEL=../dist node --env-file=.env dist/index.js",
+    "servidor": "cross-env NODE_ENV=production CONFIAR_PROXY=1 SERVIR_PAINEL=../dist node --env-file=.env dist/index.js",
     "usuario:criar": "tsx --env-file=.env src/scripts/criar-usuario.ts"
   },
   "engines": {

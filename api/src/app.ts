@@ -74,7 +74,9 @@ app.use(
     if (origensPermitidas.includes(origem)) return responder(null, { origin: true });
     if (ehMesmaOrigem(origem, req.headers.host)) return responder(null, { origin: true });
     if (!emProducao && ehLocalhost(origem)) return responder(null, { origin: true });
-    responder(new Error(`Origem não autorizada: ${origem}`));
+    // ErroApi em vez de Error: vira um 403 limpo, e não um 500 com rastreio
+    // de pilha no console, como se a API tivesse quebrado.
+    responder(new ErroApi(`Origem não autorizada: ${origem}`, 403));
   }),
 );
 app.use(express.json({ limit: '1mb' }));

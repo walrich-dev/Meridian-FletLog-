@@ -466,6 +466,8 @@ describe('Respostas da API', () => {
       headers: { Origin: 'https://site-de-terceiros.example' },
     });
     expect(resposta.headers.get('access-control-allow-origin')).toBeNull();
+    // 403, e não 500: a origem recusada é uma resposta prevista, não uma falha
+    expect(resposta.status).toBe(403);
   });
 
   it('reconhece a própria origem, para quando a API serve o painel (SERVIR_PAINEL)', () => {

@@ -70,8 +70,8 @@ npm run build
 npm run servidor
 ```
 
-O `npm run servidor` sobe a API com `NODE_ENV=production` e
-`SERVIR_PAINEL=../dist`. Deve aparecer:
+O `npm run servidor` sobe a API com `NODE_ENV=production`,
+`SERVIR_PAINEL=../dist` e `CONFIAR_PROXY=1`. Deve aparecer:
 
 ```
 Painel servido de C:\...\TCC-projeto\dist
@@ -185,6 +185,14 @@ powercfg /change hibernate-timeout-ac 0
 exposto: nem o PostgreSQL, nem arquivos, nem outras portas. O Firewall do
 Windows não precisa de nenhuma regra nova, porque é o `cloudflared` que abre a
 conexão de dentro para fora.
+
+**Não abra a porta 3333 no roteador.** O `npm run servidor` usa
+`CONFIAR_PROXY=1`, que manda a API confiar no cabeçalho `X-Forwarded-For` para
+saber o IP de quem acessa — sem isso o `cloudflared`, que roda na sua máquina,
+faria todas as visitas parecerem vir de `127.0.0.1`, e o limite de 10
+tentativas de login valeria para todos os visitantes somados. Confiar nesse
+cabeçalho só é seguro porque a porta 3333 não é alcançável direto da internet:
+se fosse, daria para falsificar o IP e furar o limite.
 
 **Sua internet carrega o acesso.** Cada pessoa usando o sistema consome a sua
 banda de upload, que em conexões domésticas é bem menor que a de download. Para
