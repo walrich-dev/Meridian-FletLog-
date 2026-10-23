@@ -17,7 +17,7 @@ import { Link, useLocation } from 'react-router';
 import { useUsuario } from '../auth/useAuth';
 import { Avatar } from '../components/Avatar';
 import { BadgeCnh, BadgeSituacao, BadgeTipo } from '../components/Badges';
-import { BarraDeProporcao, BarrasHorizontais, GraficoColunas, Sparkline } from '../components/Graficos';
+import { BarraDeProporcao, BarrasHorizontais, GraficoColunas } from '../components/Graficos';
 import { useAlertas } from '../components/layout/useAlertas';
 import { PlacaVeiculo } from '../components/PlacaVeiculo';
 import { Botao, BotaoLink } from '../components/ui/Botao';
@@ -78,12 +78,6 @@ export function DashboardPage() {
           titulo="Custo no mês"
           Icone={Wallet}
           valor={formatarMoeda(custos.mesAtual)}
-          extra={
-            <Sparkline
-              valores={custos.porMes.map((mes) => mes.total)}
-              descricao="Tendência do custo de manutenção nos últimos 12 meses"
-            />
-          }
         >
           {/* Referência neutra: o mês atual ainda está em andamento, então um percentual
               de variação contra o mês anterior completo seria enganoso */}
@@ -352,15 +346,12 @@ function Indicador({
   Icone,
   valor,
   link,
-  extra,
   children,
 }: {
   titulo: string;
   Icone: LucideIcon;
   valor: string;
   link?: string;
-  /** Conteúdo à direita do valor (ex.: minilinha de tendência) */
-  extra?: ReactNode;
   children: ReactNode;
 }) {
   const conteudo = (
@@ -371,16 +362,13 @@ function Indicador({
           <Icone className="size-5" aria-hidden />
         </span>
       </div>
-      <div className="mt-3 flex items-end justify-between gap-2">
+      <div className="mt-3">
         {/* whitespace-nowrap: sem isto "R$ 3.090,00" quebra no espaço depois do
             cifrão, e o valor deste cartão desalinha dos outros da fileira.
             O tamanho cresce conforme a largura do próprio cartão. */}
         <p className="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-900 @min-[12rem]:text-3xl">
           {valor}
         </p>
-        {/* O minigráfico só aparece quando sobra espaço de verdade ao lado do
-            valor. Em cartão estreito ele empurrava o conteúdo para fora. */}
-        {extra && <span className="hidden shrink-0 @min-[15rem]:block">{extra}</span>}
       </div>
       <div className="mt-1.5 text-sm text-slate-500">{children}</div>
     </>
