@@ -1,4 +1,4 @@
-// Formato dos dados trocados com a API (real ou simulada). Datas chegam como texto
+// Formato dos dados trocados com a API. Datas chegam como texto
 // ISO (ex.: "2026-10-17T00:00:00.000Z"); use as funções de lib/formatacao.ts para exibi-las.
 
 export type Perfil = 'ADMIN' | 'GESTOR';

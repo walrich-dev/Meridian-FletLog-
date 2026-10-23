@@ -1,4 +1,4 @@
-// Schemas Zod que validam os dados recebidos pela API simulada.
+// Schemas Zod que validam os dados recebidos pela API.
 // Os documentos são normalizados antes da validação (ex.: "abc-1d23" -> "ABC1D23"),
 // então o usuário pode digitar com ou sem pontuação.
 import { z } from 'zod';

@@ -10,7 +10,7 @@ import { calcularSituacao, calcularSituacaoCnh, piorSituacao } from '../regras/s
 import { chassi, id, inteiro, lerId, opcional, placa, renavam, texto } from '../regras/validacao.js';
 import type { Situacao, Veiculo, VeiculoDetalhe, VeiculoListagem } from '../tipos.js';
 
-/** Limite de quilometragem aceito, o mesmo do simulador. */
+/** Teto de quilometragem aceito: acima disso é erro de digitação, não hodômetro. */
 const KM_MAXIMO = 2_000_000;
 
 const veiculoSchema = z.object({
