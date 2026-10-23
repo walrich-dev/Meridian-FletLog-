@@ -448,6 +448,18 @@ describe('Respostas da API', () => {
     }
   });
 
+  it('envia os cabeçalhos de segurança do helmet', async () => {
+    const resposta = await fetch((await iniciarApi()) + '/health');
+    // Impede o navegador de adivinhar o tipo do conteúdo
+    expect(resposta.headers.get('x-content-type-options')).toBe('nosniff');
+    // Impede o painel de ser aberto dentro de um iframe de outro site
+    expect(resposta.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+    // Não vaza o endereço interno da API para outros sites
+    expect(resposta.headers.get('referrer-policy')).toBe('no-referrer');
+    // Não anuncia que o servidor é Express
+    expect(resposta.headers.get('x-powered-by')).toBeNull();
+  });
+
   it('responde 404 em rota inexistente', async () => {
     expect((await pedir('GET', '/nao-existe', { token })).status).toBe(404);
   });

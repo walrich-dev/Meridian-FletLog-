@@ -6,6 +6,7 @@
 import { pool, type Executor } from '../banco.js';
 import { gerarHashSenha } from '../regras/senha.js';
 import { ACESSOS_DEMONSTRACAO, criarDadosDemonstracao } from './dados-demonstracao.js';
+import { exigirConfirmacaoEmProducao } from './protecao.js';
 
 /**
  * Apaga os dados atuais e grava a frota de demonstração.
@@ -94,6 +95,7 @@ export async function popularBanco(executor: Executor): Promise<void> {
 
 // Execução pela linha de comando
 if (process.argv[1]?.includes('popular-banco')) {
+  exigirConfirmacaoEmProducao('banco:popular');
   try {
     await popularBanco(pool);
     const { rows } = await pool.query(

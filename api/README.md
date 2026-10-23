@@ -25,7 +25,7 @@ psql -U postgres -c "CREATE DATABASE meridian"
 | Comando | O que faz |
 | --- | --- |
 | `npm run dev` | Sobe a API e reinicia a cada alteração no código |
-| `npm test` | Roda os 63 testes automatizados (usa o banco `meridian_teste`) |
+| `npm test` | Roda os 65 testes automatizados (usa o banco `meridian_teste`) |
 | `npm run typecheck` | Verifica os tipos TypeScript |
 | `npm run build` | Gera a versão de produção em `dist/` |
 | `npm start` | Executa a versão de produção |
@@ -46,9 +46,14 @@ psql -U postgres -c "CREATE DATABASE meridian_teste"
 | `PGHOST` · `PGPORT` · `PGUSER` · `PGPASSWORD` · `PGDATABASE` | Conexão com o PostgreSQL |
 | `PORT` | Porta da API (padrão 3333) |
 | `ORIGEM_PERMITIDA` | Endereços do painel autorizados a chamar a API (CORS), separados por vírgula. Em desenvolvimento, qualquer porta de `localhost` também é aceita |
-| `PERMITIR_RESTAURAR_DEMONSTRACAO` | `true` libera a restauração dos dados de exemplo. Deixe desligado em um sistema em uso: a restauração apaga tudo |
+| `NODE_ENV` | `production` liga as proteções de produção: CORS restrito a `ORIGEM_PERMITIDA`, restauração de demonstração bloqueada e comandos destrutivos travados |
+| `CONFIAR_PROXY` | Quantos proxies existem na frente da API (`1` em hospedagens como Render). Sem isso o limite por IP veria o IP do proxy em todas as requisições |
+| `PERMITIR_RESTAURAR_DEMONSTRACAO` | `true` libera a restauração dos dados de exemplo. A restauração apaga tudo, e em produção fica desligada mesmo com `true` |
+| `LIMITE_TAXA` | `desligado` desativa o limite de tentativas. Só os testes automatizados usam |
 
 O arquivo `.env` não vai para o GitHub.
+
+Para colocar o sistema no ar, veja [docs/IMPLANTACAO.md](../docs/IMPLANTACAO.md).
 
 ## Organização
 
@@ -61,6 +66,7 @@ api/
     ├── app.ts           monta o Express: rotas e tratamento de erros
     ├── banco.ts         conexão com o PostgreSQL, consultas e transações
     ├── autenticacao.ts  confere o token e o perfil de cada requisição
+    ├── seguranca.ts     cabeçalhos HTTP e limite de tentativas por IP
     ├── consultas.ts     trechos de SQL reaproveitados
     ├── erros.ts         erros que viram respostas HTTP
     ├── rotas/           uma parte por assunto: veículos, motoristas, manutenções...
@@ -74,7 +80,7 @@ api/
 - **SQL escrito à mão**, com o `node-postgres`, em vez de um ORM. As consultas ficam visíveis e os recursos do PostgreSQL (`FILTER`, `GROUP BY`, `unaccent`) são usados diretamente.
 - **Transações** nas operações que alteram mais de uma tabela. Concluir uma manutenção atualiza o hodômetro e programa a próxima preventiva: ou tudo acontece, ou nada muda.
 - **As somas do dashboard são feitas pelo banco** (`SUM`, `COUNT`, `GROUP BY`). Só a situação das manutenções é calculada em JavaScript, porque depende da data de hoje.
-- **Senhas com bcrypt**, que é propositalmente lento para dificultar ataques de força bruta.
+- **Senhas com bcrypt**, que é propositalmente lento para dificultar ataques de força bruta. Além dele, o login aceita no máximo 10 tentativas erradas a cada 15 minutos por IP; acertos não contam, então quem sabe a senha nunca é bloqueado.
 - **Sessões em tabela**, com token aleatório de 64 caracteres e validade de 8 horas. Inativar um usuário apaga as sessões dele na hora.
 - **As colunas usam `snake_case`** (padrão do PostgreSQL) e o painel recebe `camelCase` (padrão do JavaScript). A conversão é feita no próprio `SELECT`, com `AS "kmAtual"`.
 
@@ -104,4 +110,4 @@ Erros seguem o formato abaixo, e o painel usa `detalhes` para destacar o campo n
 { "mensagem": "Já existe um cadastro com esta placa.", "detalhes": { "placa": ["Já existe um cadastro com esta placa."] } }
 ```
 
-Códigos: 200 (sucesso), 201 (criado), 204 (sem conteúdo), 400 (dados inválidos), 401 (sem login), 403 (sem permissão), 404 (não encontrado), 409 (duplicado).
+Códigos: 200 (sucesso), 201 (criado), 204 (sem conteúdo), 400 (dados inválidos), 401 (sem login), 403 (sem permissão), 404 (não encontrado), 409 (duplicado), 429 (tentativas em excesso).

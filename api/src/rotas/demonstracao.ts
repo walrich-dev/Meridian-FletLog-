@@ -3,13 +3,17 @@
 // Apaga tudo e recria a frota de exemplo. É útil antes de uma apresentação, mas
 // perigoso em um sistema em uso, então só funciona quando
 // PERMITIR_RESTAURAR_DEMONSTRACAO=true está definido no .env.
+//
+// Em produção a rota fica desligada mesmo com a variável ligada: um .env de
+// desenvolvimento copiado por engano para o servidor não apaga a frota real.
 import { Router } from 'express';
 import { apenasPerfis, autenticar } from '../autenticacao.js';
 import { emTransacao } from '../banco.js';
 import { ErroApi } from '../erros.js';
 import { popularBanco } from '../scripts/popular-banco.js';
 
-export const permitirRestaurar = process.env.PERMITIR_RESTAURAR_DEMONSTRACAO === 'true';
+export const permitirRestaurar =
+  process.env.PERMITIR_RESTAURAR_DEMONSTRACAO === 'true' && process.env.NODE_ENV !== 'production';
 
 export const rotasDemonstracao = Router();
 

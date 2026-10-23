@@ -17,8 +17,20 @@ import { rotasManutencoes } from './rotas/manutencoes.js';
 import { rotasMotoristas } from './rotas/motoristas.js';
 import { rotasUsuarios } from './rotas/usuarios.js';
 import { rotasVeiculos } from './rotas/veiculos.js';
+import { cabecalhosSeguros, limiteGeral } from './seguranca.js';
 
 const app = express();
+
+/**
+ * Atrás de uma hospedagem (Render, Railway, Fly...) a requisição chega por um
+ * proxy, e sem isto o Express veria o IP do proxy em todas elas: o limite por
+ * IP valeria para o site inteiro de uma vez. CONFIAR_PROXY recebe o número de
+ * proxies na frente da API (normalmente 1).
+ */
+const confiarProxy = Number(process.env.CONFIAR_PROXY ?? 0);
+if (confiarProxy > 0) app.set('trust proxy', confiarProxy);
+
+app.use(cabecalhosSeguros);
 
 /**
  * CORS: o navegador só deixa o painel chamar a API se ela autorizar o endereço
@@ -58,6 +70,10 @@ app.get('/api/health', async (_req, res) => {
     res.status(503).json({ status: 'erro', banco: 'desconectado', horario: new Date().toISOString() });
   }
 });
+
+// O limite geral vem depois do /health, para o monitoramento da hospedagem
+// (que consulta a toda hora) nunca ser barrado.
+app.use('/api', limiteGeral);
 
 app.use('/api/auth', rotasAuth);
 app.use('/api/usuarios', rotasUsuarios);

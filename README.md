@@ -117,6 +117,7 @@ A API tem **63 testes automatizados** (`cd api && npm test`), executados contra 
 - [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md) — documentação completa do projeto
 - [docs/Meridian-Documentacao.docx](docs/Meridian-Documentacao.docx) — a mesma documentação em Word, no formato ABNT
 - [docs/modelagem-banco-de-dados.png](docs/modelagem-banco-de-dados.png) — modelo do banco de dados
+- [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md) — como colocar o sistema no ar (banco, API e painel)
 
 ## Próximas etapas
 

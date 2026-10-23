@@ -6,6 +6,7 @@ import { consultarUm, emTransacao, pool } from '../banco.js';
 import { ErroApi } from '../erros.js';
 import { conferirSenha, gerarHashSenha, gerarToken } from '../regras/senha.js';
 import { email, senha } from '../regras/validacao.js';
+import { limiteLogin, limiteSenha } from '../seguranca.js';
 import type { Perfil } from '../tipos.js';
 
 const loginSchema = z.object({
@@ -30,7 +31,7 @@ type LinhaUsuario = {
 
 export const rotasAuth = Router();
 
-rotasAuth.post('/login', async (req, res) => {
+rotasAuth.post('/login', limiteLogin, async (req, res) => {
   const dados = loginSchema.parse(req.body);
 
   const usuario = await consultarUm<LinhaUsuario>(
@@ -77,7 +78,7 @@ rotasAuth.get('/me', autenticar, (req, res) => {
   res.json(logado(req));
 });
 
-rotasAuth.put('/senha', autenticar, async (req, res) => {
+rotasAuth.put('/senha', limiteSenha, autenticar, async (req, res) => {
   const { senhaAtual, novaSenha } = trocarSenhaSchema.parse(req.body);
   const usuario = logado(req);
 

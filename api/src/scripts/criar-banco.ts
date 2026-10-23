@@ -7,6 +7,9 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pool } from '../banco.js';
+import { exigirConfirmacaoEmProducao } from './protecao.js';
+
+exigirConfirmacaoEmProducao('banco:criar');
 
 const pastaDoArquivo = dirname(fileURLToPath(import.meta.url));
 const caminhoDoSchema = join(pastaDoArquivo, '..', '..', 'sql', 'schema.sql');
