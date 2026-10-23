@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
 import { app } from '../app.js';
 import { pool } from '../banco.js';
+import { hoje, textoDeData } from '../regras/datas.js';
 import { popularBanco } from '../scripts/popular-banco.js';
 
 let endereco = '';
@@ -54,5 +55,9 @@ export async function entrar(email: string, senha: string): Promise<string> {
 export const ADMIN = { email: 'admin@meridian.local', senha: 'Frota@2026' };
 export const GESTOR = { email: 'gestor@meridian.local', senha: 'Gestor@2026' };
 
-/** Data de hoje no formato AAAA-MM-DD. */
-export const hojeTexto = () => new Date().toISOString().slice(0, 10);
+/**
+ * Data de hoje no formato AAAA-MM-DD, no fuso da empresa: o mesmo "hoje" que a
+ * API usa para recusar datas futuras. Com o UTC, os testes falhavam entre as
+ * 21h e a meia-noite, quando no Brasil ainda é o dia anterior.
+ */
+export const hojeTexto = () => textoDeData(hoje());
