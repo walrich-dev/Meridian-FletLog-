@@ -372,16 +372,26 @@ function Indicador({
         </span>
       </div>
       <div className="mt-3 flex items-end justify-between gap-2">
-        <p className="text-3xl font-bold tracking-tight text-slate-900">{valor}</p>
-        {extra}
+        {/* whitespace-nowrap: sem isto "R$ 3.090,00" quebra no espaço depois do
+            cifrão, e o valor deste cartão desalinha dos outros da fileira.
+            O tamanho cresce conforme a largura do próprio cartão. */}
+        <p className="whitespace-nowrap text-2xl font-bold tracking-tight text-slate-900 @min-[12rem]:text-3xl">
+          {valor}
+        </p>
+        {/* O minigráfico só aparece quando sobra espaço de verdade ao lado do
+            valor. Em cartão estreito ele empurrava o conteúdo para fora. */}
+        {extra && <span className="hidden shrink-0 @min-[15rem]:block">{extra}</span>}
       </div>
       <div className="mt-1.5 text-sm text-slate-500">{children}</div>
     </>
   );
   // Subgrade: as três linhas (título, valor, detalhe) têm a mesma altura em todos os
   // cartões da fileira, então os valores ficam alinhados mesmo se um título quebrar
+  // @container: as medidas de dentro reagem à largura do cartão, não à da
+  // janela — o mesmo cartão fica estreito em 4 colunas e largo em 2.
+  // overflow-hidden é a garantia final de que nada transborda para o vizinho.
   const classes =
-    'group row-span-3 grid grid-rows-subgrid gap-y-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)]';
+    '@container group row-span-3 grid grid-rows-subgrid gap-y-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.04)]';
   return link ? (
     <Link to={link} className={`${classes} transition hover:border-marca-200 hover:shadow-lg hover:shadow-marca-900/5`}>
       {conteudo}

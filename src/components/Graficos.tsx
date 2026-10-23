@@ -225,7 +225,14 @@ export function Sparkline({ valores, descricao }: { valores: number[]; descricao
   const ultimo = pontos[pontos.length - 1];
 
   return (
-    <svg viewBox={`0 0 ${largura} ${altura}`} className="h-9 w-28 overflow-visible" role="img" aria-label={descricao}>
+    // A largura acompanha o cartão (@container do Indicador): estreito quando
+    // ele está em 4 colunas, inteiro quando há folga.
+    <svg
+      viewBox={`0 0 ${largura} ${altura}`}
+      className="h-9 w-16 overflow-visible @min-[18rem]:w-28"
+      role="img"
+      aria-label={descricao}
+    >
       <polygon points={area} className="fill-marca-500/10" />
       <polyline
         points={linha}
