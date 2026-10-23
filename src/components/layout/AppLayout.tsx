@@ -8,7 +8,6 @@ import { Avatar } from '../Avatar';
 import { Marca } from '../Marca';
 import { AlertasProvider } from './AlertasProvider';
 import { Cabecalho } from './Cabecalho';
-import { StatusApi } from './StatusApi';
 import { useAlertas } from './useAlertas';
 
 type ItemMenu = { para: string; rotulo: string; Icone: typeof Truck; perfis?: Perfil[]; contarAlertas?: boolean };
@@ -131,8 +130,7 @@ function MenuLateral({ aberto, aoFechar }: { aberto: boolean; aoFechar: () => vo
         })}
       </nav>
 
-      <div className="space-y-3 p-4">
-        <StatusApi />
+      <div className="p-4">
         <div className="flex items-center gap-3 rounded-2xl bg-white/6 p-3 ring-1 ring-white/10">
           <Avatar nome={usuario.nome} />
           <div className="min-w-0 flex-1">
