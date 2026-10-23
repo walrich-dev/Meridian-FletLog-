@@ -5,6 +5,7 @@ import { useAuth, useUsuario } from '../../auth/useAuth';
 import { ROTULO_PERFIL } from '../../lib/formatacao';
 import type { Perfil } from '../../lib/tipos';
 import { Avatar } from '../Avatar';
+import { Marca } from '../Marca';
 import { AlertasProvider } from './AlertasProvider';
 import { Cabecalho } from './Cabecalho';
 import { StatusApi } from './StatusApi';
@@ -73,14 +74,8 @@ function MenuLateral({ aberto, aoFechar }: { aberto: boolean; aoFechar: () => vo
       aria-label="Menu principal"
     >
       <div className="flex items-center justify-between px-6 pb-7 pt-8">
-        <Link to="/" onClick={aoFechar} className="flex items-center gap-3.5">
-          <span className="grid size-12 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-            <img src="/favicon.svg" alt="" className="size-8" />
-          </span>
-          <span>
-            <span className="block text-xl font-bold tracking-tight">Meridian</span>
-            <span className="block text-sm text-marca-200/70">Gestão de frota</span>
-          </span>
+        <Link to="/" onClick={aoFechar}>
+          <Marca tom="claro" tamanho="md" legenda />
         </Link>
         <button
           type="button"

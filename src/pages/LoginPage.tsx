@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../auth/useAuth';
 import { Avatar } from '../components/Avatar';
+import { Marca } from '../components/Marca';
 import { Botao } from '../components/ui/Botao';
 import { CampoTexto } from '../components/ui/Campo';
 import { useFormulario } from '../hooks/useFormulario';
@@ -40,12 +41,7 @@ export function LoginPage() {
 
       <section className="flex items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-md">
-          <div className="mb-10 flex items-center gap-3 lg:hidden">
-            <span className="grid size-11 place-items-center rounded-xl bg-marca-600 shadow-lg shadow-marca-600/30">
-              <img src="/favicon.svg" alt="" className="size-8" />
-            </span>
-            <span className="text-xl font-bold tracking-tight">Meridian</span>
-          </div>
+          <Marca tamanho="sm" legenda className="mb-10 lg:hidden" />
 
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Bem-vindo de volta</h2>
           <p className="mt-2 text-slate-500">Entre com o e-mail e a senha cadastrados pelo administrador.</p>
@@ -138,12 +134,7 @@ function PainelDaMarca() {
       <div className="absolute -right-24 -top-24 size-96 rounded-full bg-marca-400/30 blur-3xl" aria-hidden />
       <div className="absolute -bottom-32 -left-16 size-96 rounded-full bg-sky-400/20 blur-3xl" aria-hidden />
 
-      <div className="relative flex items-center gap-5">
-        <span className="grid size-20 place-items-center rounded-3xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-          <img src="/favicon.svg" alt="" className="size-14" />
-        </span>
-        <span className="text-4xl font-bold tracking-tight">Meridian</span>
-      </div>
+      <Marca tom="claro" tamanho="lg" legenda className="relative" />
 
       <div className="relative my-auto py-12">
         <p className="mb-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-marca-100 ring-1 ring-white/20">
