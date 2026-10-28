@@ -116,6 +116,9 @@ A API tem **63 testes automatizados** (`cd api && npm test`), executados contra 
 
 - [docs/DOCUMENTACAO.md](docs/DOCUMENTACAO.md) — documentação completa do projeto
 - [docs/Meridian-Documentacao.docx](docs/Meridian-Documentacao.docx) — a mesma documentação em Word, no formato ABNT
+- [docs/Meridian-Requisitos.docx](docs/Meridian-Requisitos.docx) — documento de requisitos: RF, RNF, regras de negócio e rastreabilidade
+- [docs/Meridian-Manual-do-Usuario.docx](docs/Meridian-Manual-do-Usuario.docx) — manual de operação do sistema, com capturas de tela
+- [docs/Meridian-Plano-de-Negocios.docx](docs/Meridian-Plano-de-Negocios.docx) — plano de negócios: mercado, modelo, projeções e riscos
 - [docs/modelagem-banco-de-dados.png](docs/modelagem-banco-de-dados.png) — modelo do banco de dados
 - [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md) — como hospedar em nuvem (Vercel, Render)
 - [docs/SERVIDOR-LOCAL.md](docs/SERVIDOR-LOCAL.md) — como rodar no próprio computador e deixar acessível na web
