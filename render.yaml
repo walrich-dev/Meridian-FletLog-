@@ -1,0 +1,62 @@
+# Receita de implantação do Meridian no Render (Blueprint).
+#
+# Com este arquivo no repositório, o Render monta o serviço já configurado: não
+# há campo para preencher errado, e o que está no ar fica registrado aqui, junto
+# do código. Veja o passo a passo em docs/IMPLANTACAO.md.
+#
+# Um único serviço entrega a API e o painel, no mesmo endereço. Por isso não há
+# CORS para configurar, e o domínio próprio aponta para um lugar só.
+
+services:
+  - type: web
+    name: meridian
+    runtime: node
+    plan: free
+
+    # O Render não tem região no Brasil. Virginia é a de menor latência para cá,
+    # e é onde o banco no Neon também deve ficar: a API conversa com o banco
+    # várias vezes por requisição, então essa distância pesa mais que a do
+    # navegador até a API.
+    region: virginia
+
+    # Gera o painel (com VITE_API_URL=/api) e compila a API. Está no
+    # package.json da raiz, para o comando ser o mesmo aqui e na sua máquina.
+    buildCommand: npm run build:nuvem
+
+    # Rodado da raiz do repositório, por isso SERVIR_PAINEL=dist.
+    startCommand: node api/dist/index.js
+
+    # O Render consulta este endereço para saber se a versão nova subiu de pé.
+    # Ele responde antes do limite de requisições, de propósito.
+    healthCheckPath: /api/health
+
+    # Domínio próprio. O Render emite e renova o certificado HTTPS sozinho,
+    # assim que o DNS do Registro.br apontar para cá (veja o passo 5 do guia).
+    # Até lá os dois aparecem como pendentes, o que é esperado e não impede o
+    # serviço de funcionar pelo endereço .onrender.com.
+    domains:
+      - meridianfleetlog.com.br
+      - www.meridianfleetlog.com.br
+
+    envVars:
+      # Liga as proteções de produção: CORS restrito, restauração dos dados de
+      # demonstração bloqueada e comandos destrutivos travados.
+      - key: NODE_ENV
+        value: production
+
+      # O Render põe um proxy na frente da API. Sem este número, o limite de
+      # tentativas de login veria o IP do proxy em todas as requisições e
+      # valeria para o site inteiro de uma vez.
+      - key: CONFIAR_PROXY
+        value: 1
+
+      # Pasta do painel já gerado, que a API entrega junto. É o que faz o
+      # endereço ser único.
+      - key: SERVIR_PAINEL
+        value: dist
+
+      # Conexão com o banco no Neon. `sync: false` mantém o valor FORA deste
+      # arquivo: o Render pede no primeiro deploy e guarda no painel dele.
+      # A URL contém a senha do banco e não pode ir para o GitHub.
+      - key: DATABASE_URL
+        sync: false

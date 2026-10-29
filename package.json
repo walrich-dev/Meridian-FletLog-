@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "oxlint",
-    "build:servidor": "tsc -b && cross-env VITE_API_URL=/api vite build"
+    "build:servidor": "tsc -b && cross-env VITE_API_URL=/api vite build",
+    "build:nuvem": "npm ci --include=dev && npm run build:servidor && npm --prefix api ci --include=dev && npm --prefix api run build"
   },
   "engines": {
     "node": ">=22.12.0"

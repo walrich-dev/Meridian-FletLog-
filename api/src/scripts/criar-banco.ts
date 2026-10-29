@@ -6,7 +6,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pool } from '../banco.js';
+import { enderecoDoBanco, pool } from '../banco.js';
 import { exigirConfirmacaoEmProducao } from './protecao.js';
 
 exigirConfirmacaoEmProducao('banco:criar');
@@ -21,7 +21,7 @@ try {
   const { rows } = await pool.query<{ tabela: string }>(
     `SELECT tablename AS tabela FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`,
   );
-  console.log(`Banco "${process.env.PGDATABASE ?? 'meridian'}" criado com ${rows.length} tabelas:`);
+  console.log(`Banco ${enderecoDoBanco()} criado com ${rows.length} tabelas:`);
   for (const { tabela } of rows) console.log(`  - ${tabela}`);
   console.log('\nPara gravar os dados de demonstração: npm run banco:popular');
 } catch (erro) {

@@ -5,16 +5,16 @@
   "description": "Meridian: API REST de controle de frota (Trabalho de Curso, IESGO).",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "build": "tsc -b",
-    "start": "node --env-file=.env dist/index.js",
+    "start": "node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc -b",
-    "banco:criar": "tsx --env-file=.env src/scripts/criar-banco.ts",
-    "banco:popular": "tsx --env-file=.env src/scripts/popular-banco.ts",
+    "banco:criar": "tsx --env-file-if-exists=.env src/scripts/criar-banco.ts",
+    "banco:popular": "tsx --env-file-if-exists=.env src/scripts/popular-banco.ts",
     "banco:recriar": "npm run banco:criar && npm run banco:popular",
     "test": "vitest run",
-    "servidor": "cross-env NODE_ENV=production CONFIAR_PROXY=1 SERVIR_PAINEL=../dist node --env-file=.env dist/index.js",
-    "usuario:criar": "tsx --env-file=.env src/scripts/criar-usuario.ts"
+    "servidor": "cross-env NODE_ENV=production CONFIAR_PROXY=1 SERVIR_PAINEL=../dist node --env-file-if-exists=.env dist/index.js",
+    "usuario:criar": "tsx --env-file-if-exists=.env src/scripts/criar-usuario.ts"
   },
   "engines": {
     "node": ">=22.12.0"

@@ -1,8 +1,8 @@
 # Rodar o Meridian no seu computador e deixar na web
 
 Este guia é para o caso de o servidor ser o **seu próprio PC**, com o sistema
-acessível de qualquer lugar pela internet. Se preferir hospedar em nuvem (Vercel
-e Render), veja [IMPLANTACAO.md](IMPLANTACAO.md).
+acessível de qualquer lugar pela internet. Se preferir hospedar em nuvem, com
+endereço fixo e domínio próprio, veja [IMPLANTACAO.md](IMPLANTACAO.md).
 
 A ideia é esta:
 

@@ -18,14 +18,50 @@ types.setTypeParser(types.builtins.NUMERIC, (valor) => Number(valor));
 // BIGINT: o resultado de COUNT(*) vem como texto; o painel espera número.
 types.setTypeParser(types.builtins.INT8, (valor) => Number(valor));
 
+// -----------------------------------------------------------------------------
+// Endereço do banco
+// -----------------------------------------------------------------------------
+
+// Hospedagens de banco (Neon, Render, Supabase) entregam a conexão como uma URL
+// única. Na máquina de quem desenvolve é mais prático ter as partes separadas.
+// Aceitamos as duas formas, com a URL tendo preferência quando existe.
+const urlDoBanco = process.env.DATABASE_URL?.trim() || undefined;
+
+// Banco hospedado recusa conexão sem TLS; PostgreSQL local responde em texto
+// claro e não tem certificado. Ligamos o TLS quando a URL pede (`sslmode=`, que
+// é como as hospedagens entregam o endereço) ou quando PGSSL=1.
+//
+// Deixar `ssl: true` significa verificar o certificado — o padrão do Node. Isso
+// importa: sem a verificação a conexão fica criptografada mas aceita qualquer
+// certificado, e alguém no meio do caminho poderia se passar pelo banco e ler a
+// senha. As hospedagens usam certificados de autoridades públicas, então a
+// verificação funciona sem configuração nenhuma.
+const comTls = process.env.PGSSL === '1' || (urlDoBanco !== undefined && /[?&]sslmode=/.test(urlDoBanco));
+
 export const pool = new Pool({
-  host: process.env.PGHOST ?? 'localhost',
-  port: Number(process.env.PGPORT ?? 5432),
-  user: process.env.PGUSER ?? 'postgres',
-  password: process.env.PGPASSWORD,
-  database: process.env.PGDATABASE ?? 'meridian',
+  ...(urlDoBanco
+    ? { connectionString: urlDoBanco }
+    : {
+        host: process.env.PGHOST ?? 'localhost',
+        port: Number(process.env.PGPORT ?? 5432),
+        user: process.env.PGUSER ?? 'postgres',
+        password: process.env.PGPASSWORD,
+        database: process.env.PGDATABASE ?? 'meridian',
+      }),
+  ssl: comTls,
   max: 10,
 });
+
+/** Onde o banco está, para as mensagens de log. Nunca inclui a senha. */
+export function enderecoDoBanco(): string {
+  if (!urlDoBanco) return `${process.env.PGDATABASE ?? 'meridian'} em ${process.env.PGHOST ?? 'localhost'}`;
+  try {
+    const url = new URL(urlDoBanco);
+    return `${url.pathname.replace('/', '')} em ${url.hostname}`;
+  } catch {
+    return 'configurado por DATABASE_URL';
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Consultas

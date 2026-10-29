@@ -120,12 +120,12 @@ A API tem **63 testes automatizados** (`cd api && npm test`), executados contra 
 - [docs/Meridian-Manual-do-Usuario.docx](docs/Meridian-Manual-do-Usuario.docx) — manual de operação do sistema, com capturas de tela
 - [docs/Meridian-Plano-de-Negocios.docx](docs/Meridian-Plano-de-Negocios.docx) — plano de negócios: mercado, modelo, projeções e riscos
 - [docs/modelagem-banco-de-dados.png](docs/modelagem-banco-de-dados.png) — modelo do banco de dados
-- [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md) — como hospedar em nuvem (Vercel, Render)
+- [docs/IMPLANTACAO.md](docs/IMPLANTACAO.md) — como hospedar em nuvem, com endereço fixo e domínio próprio
 - [docs/SERVIDOR-LOCAL.md](docs/SERVIDOR-LOCAL.md) — como rodar no próprio computador e deixar acessível na web
 
 ## Próximas etapas
 
 Até a versão final (10/11/2026):
 
-- Implantação do painel e da API (ex.: Vercel e Render)
+- Implantação em nuvem com domínio próprio (ver docs/IMPLANTACAO.md)
 - Definir com o orientador o módulo de viagens
