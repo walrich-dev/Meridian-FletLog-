@@ -114,10 +114,10 @@ campo para preencher errado.
    Ela fica guardada no painel do Render, não no repositório.
 4. Clique em **Apply**. O primeiro build leva alguns minutos.
 
-Quando terminar, o Render dá um endereço `https://meridian.onrender.com`. Teste:
+Quando terminar, o Render dá um endereço `https://meridian-vdql.onrender.com`. Teste:
 
 ```powershell
-curl https://meridian.onrender.com/api/health
+curl https://meridian-vdql.onrender.com/api/health
 # {"status":"ok","banco":"conectado","horario":"..."}
 ```
 
@@ -140,25 +140,50 @@ são estes:
 
 | Tipo | Nome | Valor |
 | --- | --- | --- |
-| A | `@` (a raiz) | `216.24.57.1` |
-| CNAME | `www` | `meridian.onrender.com` |
+| A | *(vazio — a raiz)* | `216.24.57.1` |
+| CNAME | `www` | `meridian-vdql.onrender.com` |
 
-No Registro.br, a tela é **DNS → Configurar endereçamento**. Cadastre os dois.
-Dois detalhes que travam muita gente:
+### Como cadastrar no Registro.br
 
-- **Na raiz do domínio tem que ser `A`, não `CNAME`.** O padrão do DNS não
-  permite CNAME na raiz, e o Registro.br não oferece os registros `ALIAS`/`ANAME`
-  que contornam isso. É por isso que a raiz usa o IP direto.
+A tela é **DNS → Configurar endereçamento**, mas ela abre no *modo simples*, que
+só aceita um endereço para o domínio inteiro — não dá para incluir o `www`.
+Clique em **MODO AVANÇADO**. A opção do menu passa a se chamar **Configurar
+zona DNS**, e aí sim há uma tabela com TIPO / NOME / DADOS.
+
+No campo NOME, use o nome completo, como a própria tela exemplifica:
+`meridianfleetlog.com.br` para a raiz e `www.meridianfleetlog.com.br` para o
+`www`. O Registro.br não aceita o caractere `@`, que é como a raiz costuma ser
+escrita em outros provedores.
+
+Quatro detalhes que travam muita gente:
+
+- **Ao ligar o modo avançado, o domínio entra "em transição"** por cerca de duas
+  horas, e o editor de zona recusa cadastros nesse período. Não é erro: é
+  esperar e voltar.
+- **O modo avançado troca os servidores de nome do domínio.** A delegação sai de
+  `a.auto.dns.br` / `b.auto.dns.br` (modo básico) para `e.sec.dns.br` /
+  `f.sec.dns.br`. Isso importa na hora de conferir: os servidores antigos
+  continuam respondendo por um tempo, com a zona velha, e dão a impressão de que
+  o cadastro não foi salvo. Confira sempre em quem manda de verdade:
+
+  ```powershell
+  nslookup -type=NS meridianfleetlog.com.br      # quem responde pelo domínio
+  nslookup meridianfleetlog.com.br 8.8.8.8       # o que o mundo enxerga
+  ```
+
+- **Na raiz tem que ser `A`, não `CNAME`.** O padrão do DNS não permite CNAME na
+  raiz de um domínio, e o Registro.br não oferece os registros `ALIAS`/`ANAME`
+  que outros provedores usam para contornar isso. Daí o IP direto.
 - **Apague qualquer registro `AAAA`** que exista. Ele aponta para IPv6, e o
   Render responde só em IPv4: se sobrar um AAAA, parte dos visitantes tenta o
   IPv6 e não chega.
 
-Depois de propagar, o Render emite o certificado HTTPS sozinho e renova sozinho.
-Para conferir se o DNS já respondeu:
+Deixe o campo de **servidor de e-mail vazio**. O Registro.br então publica
+sozinho um `MX 0 .` e um `TXT v=spf1 -all`, que declaram que o domínio não
+recebe nem envia e-mail. São proteções contra alguém se passar por você por
+e-mail, e não interferem no site.
 
-```powershell
-nslookup meridianfleetlog.com.br
-```
+Depois de propagar, o Render emite o certificado HTTPS sozinho e renova sozinho.
 
 ### Não é preciso configurar CORS
 
